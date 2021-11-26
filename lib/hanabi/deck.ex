@@ -25,18 +25,13 @@ defmodule Hanabi.Deck do
 
   @spec to_map(deck: t()) :: %{Tile.tile_color() => Tile.tile_number()}
   def to_map(deck) do
-    {tile_map, _empty_deck} =
-      Enum.reduce(
-        1..count(deck),
-        {%{}, deck},
-        fn _, {acc, deck_acc} ->
-          {tile, new_deck} = draw_tile(deck_acc)
-          new_acc = Map.update(acc, Tile.color(tile), [tile], fn list -> [tile | list] end)
-          {new_acc, new_deck}
-        end
-      )
-
-    tile_map
+    Enum.reduce(
+      deck,
+      %{},
+      fn tile, acc ->
+        Map.update(acc, Tile.color(tile), [tile], fn list -> [tile | list] end)
+      end
+    )
   end
 
   @spec from_map(%{Tile.tile_color() => Tile.tile_number()}) :: t()
