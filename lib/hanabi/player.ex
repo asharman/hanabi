@@ -1,4 +1,8 @@
 defmodule Hanabi.Player do
+  @moduledoc """
+  A Player has a username and hand of tiles. The player can receive a hint to apply to
+  all of their tiles.
+  """
   alias Hanabi.Tile
 
   @enforce_keys [:username, :hand]

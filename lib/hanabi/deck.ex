@@ -1,4 +1,9 @@
 defmodule Hanabi.Deck do
+  @moduledoc """
+  Represents the deck of unplayed tiles in a random order.
+
+  Contains a function for drawing tiles out of the deck and querying the deck's size.
+  """
   alias Hanabi.Tile
 
   @opaque t :: list(Tile.t())
