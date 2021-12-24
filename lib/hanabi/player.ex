@@ -13,4 +13,11 @@ defmodule Hanabi.Player do
 
   @spec hand(Hanabi.Player.t()) :: list(Tile.t())
   def hand(%__MODULE__{hand: hand}), do: hand
+
+  @spec give_hint(Hanabi.Player.t(), Tile.tile_color() | Tile.tile_number()) :: Hanabi.Player.t()
+  def give_hint(player, hint) do
+    Map.update(player, :hand, [], fn
+      current_hand -> Enum.map(current_hand, &Tile.give_hint(&1, hint))
+    end)
+  end
 end
