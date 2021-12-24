@@ -31,11 +31,13 @@ defmodule HanabiTileTest do
     tile = Tile.init(:red, 1)
 
     hinted_tile = Tile.give_hint(tile, :blue)
+    expected_tile_hints = %{color: MapSet.new([:blue]), number: MapSet.new()}
 
-    assert %{color: [:blue], number: []} = Tile.hints(hinted_tile)
+    assert ^expected_tile_hints = Tile.hints(hinted_tile)
 
     hinted_tile = Tile.give_hint(hinted_tile, 3)
+    expected_tile_hints = %{color: MapSet.new([:blue]), number: MapSet.new([3])}
 
-    assert %{color: [:blue], number: [3]} = Tile.hints(hinted_tile)
+    assert ^expected_tile_hints = Tile.hints(hinted_tile)
   end
 end

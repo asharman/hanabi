@@ -7,7 +7,7 @@ defmodule Hanabi.Tile do
 
   @enforce_keys [:color, :number]
 
-  defstruct @enforce_keys ++ [hints: %{color: [], number: []}]
+  defstruct @enforce_keys ++ [hints: %{color: MapSet.new(), number: MapSet.new()}]
 
   @opaque t :: %__MODULE__{
             color: tile_color(),
@@ -18,8 +18,8 @@ defmodule Hanabi.Tile do
   @type tile_color() :: :red | :green | :blue | :yellow | :white | :rainbow
   @type tile_number() :: 1 | 2 | 3 | 4 | 5
   @type tile_hints() :: %{
-          color: list(tile_color()),
-          number: list(tile_number())
+          color: MapSet.t(tile_color()),
+          number: MapSet.t(tile_number())
         }
 
   @spec init(tile_color(), tile_number()) :: Hanabi.Tile.t()
@@ -41,13 +41,13 @@ defmodule Hanabi.Tile do
 
   @spec give_hint(Hanabi.Tile.t(), tile_color() | tile_number()) :: Hanabi.Tile.t()
   def give_hint(%__MODULE__{hints: hints} = tile, hint) when is_integer(hint) do
-    new_hints = Map.update(hints, :number, [], fn current -> [hint | current] end)
+    new_hints = Map.update(hints, :number, MapSet.new(), &MapSet.put(&1, hint))
 
     Map.put(tile, :hints, new_hints)
   end
 
   def give_hint(%__MODULE__{hints: hints} = tile, hint) when is_atom(hint) do
-    new_hints = Map.update(hints, :color, [], fn current -> [hint | current] end)
+    new_hints = Map.update(hints, :color, MapSet.new(), &MapSet.put(&1, hint))
 
     Map.put(tile, :hints, new_hints)
   end
