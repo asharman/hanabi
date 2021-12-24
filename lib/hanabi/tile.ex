@@ -5,13 +5,24 @@ defmodule Hanabi.Tile do
   And numbers are 1 - 5
   """
 
-  defstruct [:color, :number]
-  @opaque t :: %__MODULE__{color: tile_color(), number: tile_number()}
+  @enforce_keys [:color, :number]
+
+  defstruct @enforce_keys ++ [hints: %{color: [], number: []}]
+
+  @opaque t :: %__MODULE__{
+            color: tile_color(),
+            number: tile_number(),
+            hints: tile_hints()
+          }
 
   @type tile_color() :: :red | :green | :blue | :yellow | :white | :rainbow
   @type tile_number() :: 1 | 2 | 3 | 4 | 5
+  @type tile_hints() :: %{
+          color: list(tile_color()),
+          number: list(tile_number())
+        }
 
-  @spec init(tile_color(), tile_number()) :: t()
+  @spec init(tile_color(), tile_number()) :: Hanabi.Tile.t()
   def init(color, number), do: %__MODULE__{color: color, number: number}
 
   @spec color(Hanabi.Tile.t()) :: tile_color()
@@ -23,5 +34,21 @@ defmodule Hanabi.Tile do
   @spec equal?(Hanabi.Tile.t(), Hanabi.Tile.t()) :: boolean()
   def equal?(left, right) do
     color(left) == color(right) and number(left) == number(right)
+  end
+
+  @spec hints(Hanabi.Tile.t()) :: tile_hints()
+  def hints(%__MODULE__{hints: hints}), do: hints
+
+  @spec give_hint(Hanabi.Tile.t(), tile_color() | tile_number()) :: Hanabi.Tile.t()
+  def give_hint(%__MODULE__{hints: hints} = tile, hint) when is_integer(hint) do
+    new_hints = Map.update(hints, :number, [], fn current -> [hint | current] end)
+
+    Map.put(tile, :hints, new_hints)
+  end
+
+  def give_hint(%__MODULE__{hints: hints} = tile, hint) when is_atom(hint) do
+    new_hints = Map.update(hints, :color, [], fn current -> [hint | current] end)
+
+    Map.put(tile, :hints, new_hints)
   end
 end

@@ -26,4 +26,16 @@ defmodule HanabiTileTest do
       assert not(Tile.equal?(tile_1, tile_2))
     end
   end
+
+  test "Can give hints to a Tile" do
+    tile = Tile.init(:red, 1)
+
+    hinted_tile = Tile.give_hint(tile, :blue)
+
+    assert %{color: [:blue], number: []} = Tile.hints(hinted_tile)
+
+    hinted_tile = Tile.give_hint(hinted_tile, 3)
+
+    assert %{color: [:blue], number: [3]} = Tile.hints(hinted_tile)
+  end
 end
