@@ -14,13 +14,13 @@ defmodule Hanabi.Tile do
   @spec init(tile_color(), tile_number()) :: t()
   def init(color, number), do: %__MODULE__{color: color, number: number}
 
-  @spec color(t()) :: tile_color()
+  @spec color(Hanabi.Tile.t()) :: tile_color()
   def color(%__MODULE__{color: color}), do: color
 
-  @spec number(t()) :: tile_number()
+  @spec number(Hanabi.Tile.t()) :: tile_number()
   def number(%__MODULE__{number: number}), do: number
 
-  @spec equal?(t(), t()) :: boolean()
+  @spec equal?(Hanabi.Tile.t(), Hanabi.Tile.t()) :: boolean()
   def equal?(left, right) do
     color(left) == color(right) and number(left) == number(right)
   end
