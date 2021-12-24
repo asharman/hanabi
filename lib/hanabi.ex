@@ -8,7 +8,7 @@ defmodule Hanabi do
   Contexts are also responsible for managing your data, regardless
   if it comes from the database, an external API or others.
   """
-  def new_game() do
-    Game.new_game()
+  def new_game(players) do
+    Game.new_game(players)
   end
 end
