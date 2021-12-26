@@ -20,13 +20,26 @@ defmodule Hanabi.Deck do
   @spec count(deck: t()) :: non_neg_integer
   def count(deck), do: length(deck)
 
+  @spec draw_tiles(Hanabi.Deck.t(), non_neg_integer()) :: {Hanabi.Deck.t(), list(Tile.t())}
+  def draw_tiles(deck, count) do
+    Enum.reduce_while(1..count, {deck, []}, fn _, {d, tile_acc} ->
+      case draw_tile(d) do
+        {nil, new_deck} ->
+          {:halt, {new_deck, tile_acc}}
+
+        {tile, new_deck} ->
+          {:cont, {new_deck, [tile | tile_acc]}}
+      end
+    end)
+  end
+
   @spec draw_tile(deck: t()) :: {Tile.t() | nil, t()}
-  def draw_tile([tile | _] = deck) do
+  defp draw_tile([tile | _] = deck) do
     new_deck = List.delete(deck, tile)
     {tile, new_deck}
   end
 
-  def draw_tile([]), do: {nil, []}
+  defp draw_tile([]), do: {nil, []}
 
   @spec to_map(deck: t()) :: %{Tile.tile_color() => Tile.tile_number()}
   def to_map(deck) do

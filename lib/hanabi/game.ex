@@ -41,17 +41,8 @@ defmodule Hanabi.Game do
 
   @spec create_player(String.t(), Deck.t()) :: {Deck.t(), Player.t()}
   defp create_player(username, deck) do
-    {new_deck, tile_list} = draw_tiles(deck, 5)
+    {new_deck, tile_list} = Deck.draw_tiles(deck, 5)
     {new_deck, Player.init(username, tile_list)}
-  end
-
-  # TODO: Move this to Hanabi.Deck and write a test
-  @spec draw_tiles(Deck.t(), non_neg_integer()) :: {Deck.t(), list(Tile.t())}
-  defp draw_tiles(deck, count) do
-    Enum.reduce(1..count, {deck, []}, fn _, {d, tile_acc} ->
-      {tile, new_deck} = Deck.draw_tile(d)
-      {new_deck, [tile | tile_acc]}
-    end)
   end
 
   defp initial_board() do

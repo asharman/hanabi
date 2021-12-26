@@ -22,29 +22,31 @@ defmodule HanabiDeckTest do
     end
   end
 
-  test "draw_tile/1 returns a tile and it is no longer in the deck" do
-    deck = Deck.init()
+  describe "draws_tiles/2" do
+    test "drawing from an empty deck returns and empty list and an equal deck" do
+      deck = Deck.from_list([Tile.init(:red, 1)])
 
-    {tile, new_deck} = Deck.draw_tile(deck)
+      assert Deck.count(deck) == 1
 
-    tiles_before =
-      Deck.to_list(deck)
-      |> Enum.filter(&Tile.equal?(&1, tile))
+      {empty_deck, _} = Deck.draw_tiles(deck, 1)
 
-    tiles_after =
-      Deck.to_list(new_deck)
-      |> Enum.filter(&Tile.equal?(&1, tile))
+      assert {^empty_deck, []} = Deck.draw_tiles(empty_deck, 1)
+    end
+    test "drawing multiple tiles from the deck" do
+      tile_1 = Tile.init(:red, 1)
+      tile_2 = Tile.init(:blue, 2)
 
-    assert length(tiles_before) - length(tiles_after) == 1
-  end
+      deck = Deck.from_list([tile_1, tile_2])
 
-  test "draw_tile/1 returns nil and an unchanged deck when empty" do
-    deck = Deck.from_list([Tile.init(:red, 1)])
+      assert Deck.count(deck) == 2
 
-    assert Deck.count(deck) == 1
+      {new_deck, drawn_tiles} = Deck.draw_tiles(deck, 2)
 
-    {_, empty_deck} = Deck.draw_tile(deck)
+      assert length(drawn_tiles) == 2
+      assert length(new_deck) == 0
 
-    assert {nil, ^empty_deck} = Deck.draw_tile(empty_deck)
+      assert tile_1 in drawn_tiles
+      assert tile_2 in drawn_tiles
+    end
   end
 end
