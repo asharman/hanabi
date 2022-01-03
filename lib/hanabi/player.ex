@@ -35,7 +35,33 @@ defmodule Hanabi.Player do
   def give_hint(player, hint) do
     Map.update(player, :hand, %{}, fn
       current_hand ->
-        Enum.map(current_hand, fn {pos, tile} -> {pos, Tile.give_hint(tile, hint)} end)
+        Map.map(current_hand, fn {_pos, tile} -> Tile.give_hint(tile, hint) end)
     end)
+  end
+
+  @spec take_tile(Hanabi.Player.t(), non_neg_integer()) ::
+          {:ok, Hanabi.Tile.t(), Hanabi.Player.t()} | {:error, String.t()}
+  def take_tile(%__MODULE__{hand: hand} = player, position) when position >= 0 do
+    case Map.fetch(hand, position) do
+      {:ok, tile} ->
+        updated_player =
+          Map.update(player, :hand, %{}, fn
+            current_hand ->
+              Map.delete(current_hand, position)
+              |> Enum.map(fn {pos, tile} ->
+                if pos > position, do: {pos - 1, tile}, else: {pos, tile}
+              end)
+              |> Enum.into(%{})
+          end)
+
+        {:ok, tile, updated_player}
+
+      :error ->
+        {:error, "Tile was not found in the player's hand"}
+    end
+  end
+
+  def take_tile(_, _) do
+    {:error, "Position cannot be negative"}
   end
 end
