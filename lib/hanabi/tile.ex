@@ -41,13 +41,13 @@ defmodule Hanabi.Tile do
 
   @spec give_hint(Hanabi.Tile.t(), tile_color() | tile_number()) :: Hanabi.Tile.t()
   def give_hint(%__MODULE__{hints: hints} = tile, hint) when is_integer(hint) do
-    new_hints = Map.update(hints, :number, MapSet.new(), &MapSet.put(&1, hint))
+    new_hints = Map.update(hints, :number, MapSet.new([hint]), &MapSet.put(&1, hint))
 
     Map.put(tile, :hints, new_hints)
   end
 
   def give_hint(%__MODULE__{hints: hints} = tile, hint) when is_atom(hint) do
-    new_hints = Map.update(hints, :color, MapSet.new(), &MapSet.put(&1, hint))
+    new_hints = Map.update(hints, :color, MapSet.new([hint]), &MapSet.put(&1, hint))
 
     Map.put(tile, :hints, new_hints)
   end
