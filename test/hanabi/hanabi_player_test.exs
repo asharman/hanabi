@@ -18,8 +18,8 @@ defmodule HanabiPlayerTest do
 
     player = Player.init(username, initial_hand)
 
-    assert ^username = Player.username(player)
-    assert ^initial_hand = Player.hand(player)
+    assert username == Player.username(player)
+    assert initial_hand == Player.hand(player)
   end
 
   test "give_hint/2 hints all tiles in a player's hand" do
@@ -39,7 +39,7 @@ defmodule HanabiPlayerTest do
 
     expected_hand = Enum.map(initial_hand, &Tile.give_hint(&1, :red))
 
-    assert ^expected_hand = Player.hand(hinted_player)
+    assert expected_hand == Player.hand(hinted_player)
   end
 
   describe "take_tile/2" do
@@ -68,8 +68,8 @@ defmodule HanabiPlayerTest do
       ]
 
       assert {:ok, tile, updated_player} = Player.take_tile(player, 1)
-      assert ^tile = Tile.init(:blue, 1)
-      assert ^expected_hand = Player.hand(updated_player)
+      assert tile == Tile.init(:blue, 1)
+      assert expected_hand == Player.hand(updated_player)
 
       expected_hand = [
         Tile.init(:red, 1),
@@ -78,8 +78,8 @@ defmodule HanabiPlayerTest do
       ]
 
       assert {:ok, tile, updated_player} = Player.take_tile(updated_player, 1)
-      assert ^tile = Tile.init(:green, 1)
-      assert ^expected_hand = Player.hand(updated_player)
+      assert tile == Tile.init(:green, 1)
+      assert expected_hand == Player.hand(updated_player)
     end
 
     test "returns an error if the tile isn't in the player's hand", %{player: player} do
