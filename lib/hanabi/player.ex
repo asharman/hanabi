@@ -7,7 +7,8 @@ defmodule Hanabi.Player do
 
   @enforce_keys [:username, :hand]
   defstruct @enforce_keys
-  @opaque t :: %__MODULE__{username: String.t(), hand: %{non_neg_integer() => Tile.t()}}
+  @opaque t :: %__MODULE__{username: String.t(), hand: hand()}
+  @typep hand :: %{non_neg_integer() => Tile.t()}
 
   @spec init(String.t(), list(Tile.t())) :: t()
   def init(username, initial_hand) do
@@ -33,7 +34,7 @@ defmodule Hanabi.Player do
 
   @spec give_hint(Hanabi.Player.t(), Tile.tile_color() | Tile.tile_number()) :: Hanabi.Player.t()
   def give_hint(player, hint) do
-    Map.update(player, :hand, %{}, fn
+    update_player_hand(player, fn
       current_hand ->
         Map.map(current_hand, fn {_pos, tile} -> Tile.give_hint(tile, hint) end)
     end)
@@ -45,7 +46,7 @@ defmodule Hanabi.Player do
     case Map.fetch(hand, position) do
       {:ok, tile} ->
         updated_player =
-          Map.update(player, :hand, %{}, fn
+          update_player_hand(player, fn
             current_hand ->
               Map.delete(current_hand, position)
               |> Enum.map(fn {pos, tile} ->
@@ -63,5 +64,17 @@ defmodule Hanabi.Player do
 
   def take_tile(_, _) do
     {:error, "Position cannot be negative"}
+  end
+
+  @spec deal_tile(Hanabi.Player.t(), Hanabi.Tile.t()) :: Hanabi.Player.t()
+  def deal_tile(%__MODULE__{hand: hand} = player, tile) do
+	  insert_position = map_size(hand)
+
+    update_player_hand(player, fn current_hand -> Map.put(current_hand, insert_position, tile) end)
+  end
+
+  @spec update_player_hand(Hanabi.Player.t(), (hand() -> hand())) :: Hanabi.Player.t()
+  defp update_player_hand(player, fun) do
+    Map.update(player, :hand, %{}, fun)
   end
 end

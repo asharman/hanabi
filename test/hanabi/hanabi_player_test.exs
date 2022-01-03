@@ -89,5 +89,27 @@ defmodule HanabiPlayerTest do
     test "returns an error if the position is negative", %{player: player} do
       assert {:error, "Position cannot be negative"} = Player.take_tile(player, -1)
     end
+
+    test "deal_tile/2 adds a tile to the player's hand" do
+      username = "player_1"
+
+      initial_hand = [
+        Tile.init(:red, 1),
+        Tile.init(:blue, 1),
+        Tile.init(:green, 1),
+        Tile.init(:yellow, 1),
+        Tile.init(:white, 1)
+      ]
+
+      new_tile = Tile.init(:red, 5)
+
+      player = Player.init(username, initial_hand)
+
+      assert updated_player = Player.deal_tile(player, new_tile)
+
+      expected_hand = initial_hand ++ [new_tile]
+
+      assert expected_hand == Player.hand(updated_player)
+    end
   end
 end
