@@ -7,12 +7,13 @@ defmodule HanabiPlayerTest do
 
   test "init/2 initializes a player" do
     username = "player_1"
+
     initial_hand = [
       Tile.init(:red, 1),
       Tile.init(:blue, 1),
       Tile.init(:green, 1),
       Tile.init(:yellow, 1),
-      Tile.init(:white, 1),
+      Tile.init(:white, 1)
     ]
 
     player = Player.init(username, initial_hand)
@@ -23,12 +24,13 @@ defmodule HanabiPlayerTest do
 
   test "give_hint/2 hints all tiles in a player's hand" do
     username = "player_1"
+
     initial_hand = [
       Tile.init(:red, 1),
       Tile.init(:blue, 1),
       Tile.init(:green, 1),
       Tile.init(:yellow, 1),
-      Tile.init(:white, 1),
+      Tile.init(:white, 1)
     ]
 
     player = Player.init(username, initial_hand)

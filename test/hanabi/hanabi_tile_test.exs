@@ -23,7 +23,7 @@ defmodule HanabiTileTest do
       tile_1 = Tile.init(:red, 1)
       tile_2 = Tile.init(:blue, 1)
 
-      assert not(Tile.equal?(tile_1, tile_2))
+      assert not Tile.equal?(tile_1, tile_2)
     end
   end
 

@@ -32,6 +32,7 @@ defmodule HanabiDeckTest do
 
       assert {^empty_deck, []} = Deck.draw_tiles(empty_deck, 1)
     end
+
     test "drawing multiple tiles from the deck" do
       tile_1 = Tile.init(:red, 1)
       tile_2 = Tile.init(:blue, 2)

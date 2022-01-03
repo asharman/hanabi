@@ -8,8 +8,7 @@ config :hanabi, HanabiWeb.Endpoint,
   server: false
 
 # In test we don't send emails.
-config :hanabi, Hanabi.Mailer,
-  adapter: Swoosh.Adapters.Test
+config :hanabi, Hanabi.Mailer, adapter: Swoosh.Adapters.Test
 
 # Print only warnings and errors during test
 config :logger, level: :warn
