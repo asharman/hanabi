@@ -17,6 +17,12 @@ defmodule Hanabi.Deck do
     |> Enum.shuffle()
   end
 
+  @doc false
+  # Used to test non-random decks
+  def init(tiles) do
+    tiles
+  end
+
   @spec count(deck: t()) :: non_neg_integer
   def count(deck), do: length(deck)
 

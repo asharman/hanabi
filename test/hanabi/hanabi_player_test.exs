@@ -105,7 +105,7 @@ defmodule HanabiPlayerTest do
 
       player = Player.init(username, initial_hand)
 
-      assert updated_player = Player.deal_tile(player, new_tile)
+      assert updated_player = Player.deal_tile(new_tile, player)
 
       expected_hand = initial_hand ++ [new_tile]
 
