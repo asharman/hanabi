@@ -7,14 +7,16 @@ defmodule Hanabi.Game do
   alias Hanabi.Player
   alias Hanabi.Tile
 
-  defstruct([:deck, :players, :board, :discard_pile, :strikes])
+  defstruct([:deck, :players, :board, :discard_pile, :strikes, :hint_count, :message])
 
   @opaque t() :: %__MODULE__{
             deck: Deck.t(),
             players: list(Player.t()),
             board: board(),
             discard_pile: discard_pile(),
-            strikes: 0 | 1 | 2
+            strikes: 0 | 1 | 2,
+            hint_count: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8,
+            message: String.t()
           }
 
   @typep board :: %{Tile.tile_color() => MapSet.t(Tile.tile_number())}
@@ -36,7 +38,9 @@ defmodule Hanabi.Game do
       players: initial_players,
       board: initial_board(),
       discard_pile: initial_discard_pile(),
-      strikes: 0
+      strikes: 0,
+      hint_count: 8,
+      message: "Welcome to Hanabi!"
     }
   end
 
@@ -57,7 +61,9 @@ defmodule Hanabi.Game do
       players: initial_players,
       board: initial_board(),
       discard_pile: initial_discard_pile(),
-      strikes: 0
+      strikes: 0,
+      hint_count: 8,
+      message: "Welcome to Hanabi!"
     }
   end
 
@@ -69,10 +75,7 @@ defmodule Hanabi.Game do
 
       updated_player = Enum.reduce(tiles, updated_player, &Player.deal_tile/2)
 
-      new_players =
-        Enum.map(game.players, fn player ->
-          if Player.username(player) == player_username, do: updated_player, else: player
-        end)
+      new_players = update_players(game, updated_player)
 
       case add_tile_to_board(game.board, tile) do
         {:ok, new_board} ->
@@ -98,6 +101,34 @@ defmodule Hanabi.Game do
     end
   end
 
+  @spec give_hint(
+          Hanabi.Game.t(),
+          String.t(),
+          String.t(),
+          Hanabi.Tile.tile_color() | Hanabi.Tile.tile_number()
+        ) :: Hanabi.Game.t()
+  def give_hint(%__MODULE__{hint_count: 0} = game, _hinting_player, _hinted_player, _value) do
+    %__MODULE__{
+      game
+      | message: "There are no hints left, choose another action"
+    }
+  end
+
+  def give_hint(game, hinting_player, hinted_player, value) do
+    with {:ok, player_receiving_hint} <- fetch_player(game, hinted_player) do
+      updated_player = Player.give_hint(player_receiving_hint, value)
+
+      new_players = update_players(game, updated_player)
+
+      %__MODULE__{
+        game
+        | players: new_players,
+          hint_count: game.hint_count - 1,
+          message: "#{hinting_player} hinted #{hinted_player} #{value}"
+      }
+    end
+  end
+
   @spec deck(Hanabi.Game.t()) :: Deck.t()
   def deck(%__MODULE__{deck: deck}), do: deck
 
@@ -112,6 +143,12 @@ defmodule Hanabi.Game do
 
   @spec strikes(Hanabi.Game.t()) :: non_neg_integer()
   def strikes(%__MODULE__{strikes: strikes}), do: strikes
+
+  @spec hint_count(Hanabi.Game.t()) :: non_neg_integer()
+  def hint_count(%__MODULE__{hint_count: hint_count}), do: hint_count
+
+  @spec message(Hanabi.Game.t()) :: String.t()
+  def message(%__MODULE__{message: message}), do: message
 
   @spec create_player(String.t(), Deck.t()) :: {Deck.t(), Player.t()}
   defp create_player(username, deck) do
@@ -147,6 +184,14 @@ defmodule Hanabi.Game do
       player ->
         {:ok, player}
     end
+  end
+
+  defp update_players(game, updated_player) do
+    Enum.map(game.players, fn player ->
+      if Player.username(player) == Player.username(updated_player),
+        do: updated_player,
+        else: player
+    end)
   end
 
   defp initial_board() do
