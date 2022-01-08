@@ -18,9 +18,9 @@ defmodule Hanabi.Tile do
   @type tile_color() :: :red | :green | :blue | :yellow | :white | :rainbow
   @type tile_number() :: 1 | 2 | 3 | 4 | 5
   @type tile_hints() :: %{
-          color: MapSet.t(tile_color()),
-          number: MapSet.t(tile_number())
-        }
+           color: MapSet.t(tile_color()),
+           number: MapSet.t(tile_number())
+         }
 
   @spec init(tile_color(), tile_number()) :: Hanabi.Tile.t()
   def init(color, number), do: %__MODULE__{color: color, number: number}
@@ -50,5 +50,61 @@ defmodule Hanabi.Tile do
     new_hints = Map.update(hints, :color, MapSet.new([hint]), &MapSet.put(&1, hint))
 
     Map.put(tile, :hints, new_hints)
+  end
+
+  @spec tally(Hanabi.Tile.t()) :: tile_hints()
+  def tally(tile) do
+    %{
+      color: possible_colors(tile),
+      number: possible_numbers(tile)
+    }
+  end
+
+  defp possible_colors(%__MODULE__{color: :rainbow, hints: %{color: color_hints}}) do
+    case MapSet.size(color_hints) do
+      0 ->
+        MapSet.new([:red, :blue, :green, :white, :yellow, :rainbow])
+
+      1 ->
+        MapSet.put(color_hints, :rainbow)
+
+      _ ->
+        MapSet.new([:rainbow])
+    end
+  end
+
+  defp possible_colors(%__MODULE__{color: color, hints: %{color: color_hints}}) do
+    case {MapSet.size(color_hints), MapSet.member?(color_hints, color)} do
+      {0, _} ->
+        MapSet.new([:red, :blue, :green, :white, :yellow, :rainbow])
+
+      {1, true} ->
+        MapSet.new([color, :rainbow])
+
+      {_, true} ->
+        MapSet.new([color])
+
+      {_, false} ->
+        MapSet.difference(
+          MapSet.new([:red, :blue, :green, :white, :yellow, :rainbow]),
+          color_hints
+        )
+    end
+  end
+
+  defp possible_numbers(%__MODULE__{number: number, hints: %{number: number_hints}}) do
+    case {MapSet.size(number_hints), MapSet.member?(number_hints, number)} do
+      {0, _} ->
+        MapSet.new([1, 2, 3, 4, 5])
+
+      {_, true} ->
+        MapSet.new([number])
+
+      {_, false} ->
+        MapSet.difference(
+          MapSet.new([1, 2, 3, 4, 5]),
+          number_hints
+        )
+    end
   end
 end
