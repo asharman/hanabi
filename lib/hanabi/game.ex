@@ -21,6 +21,16 @@ defmodule Hanabi.Game do
 
   @typep board :: %{Tile.tile_color() => MapSet.t(Tile.tile_number())}
   @typep discard_pile :: %{Tile.tile_color() => list(Tile.tile_number())}
+  @type tally :: %{
+          deck: non_neg_integer(),
+          hand: list(Tile.tile_hints()),
+          players: %{String.t() => list(Tile.t())},
+          board: board(),
+          discard_pile: discard_pile(),
+          strikes: 0 | 1 | 2,
+          hint_count: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8,
+          message: String.t()
+        }
 
   @spec new_game(list(String.t())) :: Hanabi.Game.t()
   def new_game(players) do
@@ -65,6 +75,22 @@ defmodule Hanabi.Game do
       hint_count: 8,
       message: "Welcome to Hanabi!"
     }
+  end
+
+  @spec tally(Hanabi.Game.t(), String.t()) :: tally() | {:error, String.t()}
+  def tally(game, username) do
+    with {:ok, player} <- fetch_player(game, username) do
+      players =
+        Enum.filter(game.players, &(Player.username(&1) != username))
+        |> Enum.into(%{}, fn p -> {Player.username(p), Player.hand(p)} end)
+
+      %{
+        game
+        | players: players,
+          deck: Deck.count(game.deck)
+      }
+      |> Map.put(:hand, Enum.map(Player.hand(player), &Tile.tally/1))
+    end
   end
 
   @spec play_tile(Hanabi.Game.t(), String.t(), non_neg_integer()) :: Hanabi.Game.t()
@@ -128,27 +154,6 @@ defmodule Hanabi.Game do
       }
     end
   end
-
-  @spec deck(Hanabi.Game.t()) :: Deck.t()
-  def deck(%__MODULE__{deck: deck}), do: deck
-
-  @spec players(Hanabi.Game.t()) :: list(Player.t())
-  def players(%__MODULE__{players: players}), do: players
-
-  @spec discard_pile(Hanabi.Game.t()) :: discard_pile()
-  def discard_pile(%__MODULE__{discard_pile: discard_pile}), do: discard_pile
-
-  @spec board(Hanabi.Game.t()) :: board()
-  def board(%__MODULE__{board: board}), do: board
-
-  @spec strikes(Hanabi.Game.t()) :: non_neg_integer()
-  def strikes(%__MODULE__{strikes: strikes}), do: strikes
-
-  @spec hint_count(Hanabi.Game.t()) :: non_neg_integer()
-  def hint_count(%__MODULE__{hint_count: hint_count}), do: hint_count
-
-  @spec message(Hanabi.Game.t()) :: String.t()
-  def message(%__MODULE__{message: message}), do: message
 
   @spec create_player(String.t(), Deck.t()) :: {Deck.t(), Player.t()}
   defp create_player(username, deck) do
