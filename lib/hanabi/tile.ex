@@ -18,9 +18,9 @@ defmodule Hanabi.Tile do
   @type tile_color() :: :red | :green | :blue | :yellow | :white | :rainbow
   @type tile_number() :: 1 | 2 | 3 | 4 | 5
   @type tile_hints() :: %{
-           color: MapSet.t(tile_color()),
-           number: MapSet.t(tile_number())
-         }
+          color: MapSet.t(tile_color()),
+          number: MapSet.t(tile_number())
+        }
 
   @spec init(tile_color(), tile_number()) :: Hanabi.Tile.t()
   def init(color, number), do: %__MODULE__{color: color, number: number}

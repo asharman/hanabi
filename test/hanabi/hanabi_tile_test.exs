@@ -42,8 +42,9 @@ defmodule HanabiTileTest do
   end
 
   describe "tally/1" do
-	  test "hinting a non-rainbow tile" do
-	    tile = Tile.init(:red, 3)
+    test "hinting a non-rainbow tile" do
+      tile = Tile.init(:red, 3)
+
       expected_tally = %{
         color: MapSet.new([:red, :blue, :green, :yellow, :white, :rainbow]),
         number: MapSet.new([1, 2, 3, 4, 5])
@@ -52,6 +53,7 @@ defmodule HanabiTileTest do
       assert Tile.tally(tile) == expected_tally
 
       tile = Tile.give_hint(tile, :red)
+
       expected_tally = %{
         color: MapSet.new([:red, :rainbow]),
         number: MapSet.new([1, 2, 3, 4, 5])
@@ -60,6 +62,7 @@ defmodule HanabiTileTest do
       assert Tile.tally(tile) == expected_tally
 
       tile = Tile.give_hint(tile, 2)
+
       expected_tally = %{
         color: MapSet.new([:red, :rainbow]),
         number: MapSet.new([1, 3, 4, 5])
@@ -68,6 +71,7 @@ defmodule HanabiTileTest do
       assert Tile.tally(tile) == expected_tally
 
       tile = Tile.give_hint(tile, 3)
+
       expected_tally = %{
         color: MapSet.new([:red, :rainbow]),
         number: MapSet.new([3])
@@ -76,6 +80,7 @@ defmodule HanabiTileTest do
       assert Tile.tally(tile) == expected_tally
 
       tile = Tile.give_hint(tile, :blue)
+
       expected_tally = %{
         color: MapSet.new([:red]),
         number: MapSet.new([3])
@@ -84,8 +89,9 @@ defmodule HanabiTileTest do
       assert Tile.tally(tile) == expected_tally
     end
 
-	  test "hinting a rainbow tile" do
-	    tile = Tile.init(:rainbow, 3)
+    test "hinting a rainbow tile" do
+      tile = Tile.init(:rainbow, 3)
+
       expected_tally = %{
         color: MapSet.new([:red, :blue, :green, :yellow, :white, :rainbow]),
         number: MapSet.new([1, 2, 3, 4, 5])
@@ -94,6 +100,7 @@ defmodule HanabiTileTest do
       assert Tile.tally(tile) == expected_tally
 
       tile = Tile.give_hint(tile, :red)
+
       expected_tally = %{
         color: MapSet.new([:red, :rainbow]),
         number: MapSet.new([1, 2, 3, 4, 5])
@@ -102,6 +109,7 @@ defmodule HanabiTileTest do
       assert Tile.tally(tile) == expected_tally
 
       tile = Tile.give_hint(tile, 2)
+
       expected_tally = %{
         color: MapSet.new([:red, :rainbow]),
         number: MapSet.new([1, 3, 4, 5])
@@ -110,6 +118,7 @@ defmodule HanabiTileTest do
       assert Tile.tally(tile) == expected_tally
 
       tile = Tile.give_hint(tile, 3)
+
       expected_tally = %{
         color: MapSet.new([:red, :rainbow]),
         number: MapSet.new([3])
@@ -118,6 +127,7 @@ defmodule HanabiTileTest do
       assert Tile.tally(tile) == expected_tally
 
       tile = Tile.give_hint(tile, :blue)
+
       expected_tally = %{
         color: MapSet.new([:rainbow]),
         number: MapSet.new([3])
