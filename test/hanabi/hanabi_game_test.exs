@@ -61,13 +61,15 @@ defmodule HanabiGameTest do
         discard_pile: new_discard_pile,
         strikes: new_strikes,
         board: new_board,
-        current_player: current_player
+        current_player: current_player,
+        message: message
       } = Game.tally(new_game, "player_1")
 
       assert current_player == "player_2"
       assert new_board == expected_board
       assert new_strikes == expected_strikes
       assert new_discard_pile == expected_discard_pile
+      assert message == "player_1 successfully played a red 1"
     end
 
     test "returns a new game with 1 more strike and the tile added to the discard pile", %{
@@ -85,13 +87,15 @@ defmodule HanabiGameTest do
         discard_pile: new_discard_pile,
         strikes: new_strikes,
         board: new_board,
-        current_player: current_player
+        current_player: current_player,
+        message: message
       } = Game.tally(new_game, "player_1")
 
       assert current_player == "player_2"
       assert new_board == expected_board
       assert new_strikes == strikes + 1
       assert new_discard_pile == expected_discard
+      assert message == "player_1 incorrectly played a blue 2"
     end
 
     test "return an error when a player makes a move that isn't the current player", %{game: game} do

@@ -129,7 +129,9 @@ defmodule Hanabi.Game do
              | board: new_board,
                players: new_players,
                deck: new_deck,
-               current_player: next_player(game)
+               current_player: next_player(game),
+               message:
+                 "#{player_username} successfully played a #{Tile.color(tile)} #{Tile.number(tile)}"
            }}
 
         {:error, _reason} ->
@@ -148,7 +150,9 @@ defmodule Hanabi.Game do
                current_player: next_player(game),
                deck: new_deck,
                strikes: game.strikes + 1,
-               discard_pile: new_discard_pile
+               discard_pile: new_discard_pile,
+               message:
+                 "#{player_username} incorrectly played a #{Tile.color(tile)} #{Tile.number(tile)}"
            }}
       end
     end
