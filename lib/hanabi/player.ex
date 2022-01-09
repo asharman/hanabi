@@ -68,7 +68,7 @@ defmodule Hanabi.Player do
 
   @spec deal_tile(Hanabi.Tile.t(), Hanabi.Player.t()) :: Hanabi.Player.t()
   def deal_tile(tile, %__MODULE__{hand: hand} = player) do
-	  insert_position = map_size(hand)
+    insert_position = map_size(hand)
 
     update_player_hand(player, fn current_hand -> Map.put(current_hand, insert_position, tile) end)
   end

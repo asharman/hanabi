@@ -7,7 +7,16 @@ defmodule Hanabi.Game do
   alias Hanabi.Player
   alias Hanabi.Tile
 
-  defstruct([:deck, :players, :board, :discard_pile, :strikes, :hint_count, :message])
+  defstruct([
+    :deck,
+    :players,
+    :board,
+    :discard_pile,
+    :strikes,
+    :hint_count,
+    :message,
+    :current_player
+  ])
 
   @opaque t() :: %__MODULE__{
             deck: Deck.t(),
@@ -16,14 +25,26 @@ defmodule Hanabi.Game do
             discard_pile: discard_pile(),
             strikes: 0 | 1 | 2,
             hint_count: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8,
+            current_player: String.t(),
             message: String.t()
           }
 
   @typep board :: %{Tile.tile_color() => MapSet.t(Tile.tile_number())}
   @typep discard_pile :: %{Tile.tile_color() => list(Tile.tile_number())}
+  @type tally :: %{
+          deck: non_neg_integer(),
+          hand: list(Tile.tile_hints()),
+          players: %{String.t() => list(Tile.t())},
+          board: board(),
+          discard_pile: discard_pile(),
+          strikes: 0 | 1 | 2,
+          hint_count: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8,
+          current_player: String.t(),
+          message: String.t()
+        }
 
   @spec new_game(list(String.t())) :: Hanabi.Game.t()
-  def new_game(players) do
+  def new_game([first_player | _] = players) do
     deck = Deck.init()
 
     {updated_deck, initial_players} =
@@ -40,13 +61,14 @@ defmodule Hanabi.Game do
       discard_pile: initial_discard_pile(),
       strikes: 0,
       hint_count: 8,
+      current_player: first_player,
       message: "Welcome to Hanabi!"
     }
   end
 
   # Used for testing a non-random deck
   @doc false
-  def new_game(players, deck) do
+  def new_game([first_player | _] = players, deck) do
     deck = Deck.init(deck)
 
     {updated_deck, initial_players} =
@@ -63,11 +85,33 @@ defmodule Hanabi.Game do
       discard_pile: initial_discard_pile(),
       strikes: 0,
       hint_count: 8,
+      current_player: first_player,
       message: "Welcome to Hanabi!"
     }
   end
 
-  @spec play_tile(Hanabi.Game.t(), String.t(), non_neg_integer()) :: Hanabi.Game.t()
+  @spec tally(Hanabi.Game.t(), String.t()) :: tally() | {:error, String.t()}
+  def tally(game, username) do
+    with {:ok, player} <- fetch_player(game, username) do
+      players =
+        Enum.filter(game.players, &(Player.username(&1) != username))
+        |> Enum.into(%{}, fn p -> {Player.username(p), Player.hand(p)} end)
+
+      %{
+        game
+        | players: players,
+          deck: Deck.count(game.deck)
+      }
+      |> Map.put(:hand, Enum.map(Player.hand(player), &Tile.tally/1))
+    end
+  end
+
+  @spec play_tile(Hanabi.Game.t(), String.t(), non_neg_integer()) ::
+          {:ok, Hanabi.Game.t()} | {:error, String.t()}
+  def play_tile(game, player_username, _position) when player_username != game.current_player do
+    {:error, "It is currently #{game.current_player}'s turn"}
+  end
+
   def play_tile(game, player_username, position) do
     with {:ok, player} <- fetch_player(game, player_username),
          {:ok, tile, updated_player} <- Player.take_tile(player, position) do
@@ -79,7 +123,14 @@ defmodule Hanabi.Game do
 
       case add_tile_to_board(game.board, tile) do
         {:ok, new_board} ->
-          %__MODULE__{game | board: new_board, players: new_players, deck: new_deck}
+          {:ok,
+           %__MODULE__{
+             game
+             | board: new_board,
+               players: new_players,
+               deck: new_deck,
+               current_player: next_player(game)
+           }}
 
         {:error, _reason} ->
           new_discard_pile =
@@ -90,13 +141,15 @@ defmodule Hanabi.Game do
               &[Tile.number(tile) | &1]
             )
 
-          %__MODULE__{
-            game
-            | players: new_players,
-              deck: new_deck,
-              strikes: game.strikes + 1,
-              discard_pile: new_discard_pile
-          }
+          {:ok,
+           %__MODULE__{
+             game
+             | players: new_players,
+               current_player: next_player(game),
+               deck: new_deck,
+               strikes: game.strikes + 1,
+               discard_pile: new_discard_pile
+           }}
       end
     end
   end
@@ -106,12 +159,18 @@ defmodule Hanabi.Game do
           String.t(),
           String.t(),
           Hanabi.Tile.tile_color() | Hanabi.Tile.tile_number()
-        ) :: Hanabi.Game.t()
+        ) :: {:ok, Hanabi.Game.t()} | {:error, String.t()}
+  def give_hint(game, hinting_player, _hinted_player, _value)
+      when hinting_player != game.current_player do
+    {:error, "It is currently #{game.current_player}'s turn"}
+  end
+
   def give_hint(%__MODULE__{hint_count: 0} = game, _hinting_player, _hinted_player, _value) do
-    %__MODULE__{
-      game
-      | message: "There are no hints left, choose another action"
-    }
+    {:ok,
+     %__MODULE__{
+       game
+       | message: "There are no hints left, choose another action"
+     }}
   end
 
   def give_hint(game, hinting_player, hinted_player, value) do
@@ -120,35 +179,57 @@ defmodule Hanabi.Game do
 
       new_players = update_players(game, updated_player)
 
-      %__MODULE__{
-        game
-        | players: new_players,
-          hint_count: game.hint_count - 1,
-          message: "#{hinting_player} hinted #{hinted_player} #{value}"
-      }
+      {:ok,
+       %__MODULE__{
+         game
+         | players: new_players,
+           hint_count: game.hint_count - 1,
+           current_player: next_player(game),
+           message: "#{hinting_player} hinted #{hinted_player} #{value}"
+       }}
     end
   end
 
-  @spec deck(Hanabi.Game.t()) :: Deck.t()
-  def deck(%__MODULE__{deck: deck}), do: deck
+  @spec discard_tile(Hanabi.Game.t(), String.t(), non_neg_integer()) ::
+          {:ok, Hanabi.Game.t()} | {:error, String.t()}
+  def discard_tile(game, player_username, _position)
+      when player_username != game.current_player do
+    {:error, "It is currently #{game.current_player}'s turn"}
+  end
 
-  @spec players(Hanabi.Game.t()) :: list(Player.t())
-  def players(%__MODULE__{players: players}), do: players
+  def discard_tile(%__MODULE__{hint_count: 8} = game, _player_username, _position) do
+    {:ok, %__MODULE__{game | message: "Cannot discard a tile while there are 8 hints"}}
+  end
 
-  @spec discard_pile(Hanabi.Game.t()) :: discard_pile()
-  def discard_pile(%__MODULE__{discard_pile: discard_pile}), do: discard_pile
+  def discard_tile(game, player_username, position) do
+    with {:ok, player} <- fetch_player(game, player_username),
+         {:ok, tile, updated_player} <- Player.take_tile(player, position) do
+      {new_deck, tiles} = Deck.draw_tiles(game.deck, 1)
 
-  @spec board(Hanabi.Game.t()) :: board()
-  def board(%__MODULE__{board: board}), do: board
+      updated_player = Enum.reduce(tiles, updated_player, &Player.deal_tile/2)
 
-  @spec strikes(Hanabi.Game.t()) :: non_neg_integer()
-  def strikes(%__MODULE__{strikes: strikes}), do: strikes
+      new_players = update_players(game, updated_player)
 
-  @spec hint_count(Hanabi.Game.t()) :: non_neg_integer()
-  def hint_count(%__MODULE__{hint_count: hint_count}), do: hint_count
+      new_discard_pile =
+        Map.update(
+          game.discard_pile,
+          Tile.color(tile),
+          [Tile.number(tile)],
+          &[Tile.number(tile) | &1]
+        )
 
-  @spec message(Hanabi.Game.t()) :: String.t()
-  def message(%__MODULE__{message: message}), do: message
+      {:ok,
+       %__MODULE__{
+         game
+         | players: new_players,
+           current_player: next_player(game),
+           deck: new_deck,
+           hint_count: game.hint_count + 1,
+           discard_pile: new_discard_pile,
+           message: "#{player_username} discarded a #{Tile.color(tile)} #{Tile.number(tile)}"
+       }}
+    end
+  end
 
   @spec create_player(String.t(), Deck.t()) :: {Deck.t(), Player.t()}
   defp create_player(username, deck) do
@@ -192,6 +273,22 @@ defmodule Hanabi.Game do
         do: updated_player,
         else: player
     end)
+  end
+
+  @spec next_player(Hanabi.Game.t()) :: String.t()
+  defp next_player(%__MODULE__{current_player: current_player, players: players}) do
+    current_player_index = Enum.find_index(players, &(Player.username(&1) == current_player))
+
+    if current_player_index == length(players) - 1 do
+      List.first(players)
+      |> Player.username()
+    else
+      players
+      |> Enum.with_index()
+      |> Enum.find(fn {_, index} -> index - 1 == current_player_index end)
+      |> elem(0)
+      |> Player.username()
+    end
   end
 
   defp initial_board() do
