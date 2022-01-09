@@ -199,6 +199,58 @@ defmodule HanabiGameTest do
     end
   end
 
+  describe "discard_tile/3" do
+    setup do
+      initial_deck = [
+        Tile.init(:red, 1),
+        Tile.init(:blue, 2)
+      ]
+
+      game = Game.new_game(["player_1", "player_2"], initial_deck)
+
+      %{game: game}
+    end
+
+    test "discarding a tile adds it to the discard pile and increments the hint_count", %{
+      game: game
+    } do
+      {:ok, hinted_game} =
+        Game.give_hint(game, "player_1", "player_2", :red)
+        |> elem(1)
+        |> Game.give_hint("player_2", "player_1", :red)
+
+      {:ok, new_game} = Game.discard_tile(hinted_game, "player_1", 0)
+
+      %{hint_count: old_hint_count, discard_pile: old_discard_pile} =
+        Game.tally(hinted_game, "player_1")
+
+      %{
+        hint_count: new_hint_count,
+        discard_pile: new_discard_pile,
+        current_player: current_player,
+        message: message
+      } = Game.tally(new_game, "player_1")
+
+      assert new_hint_count == old_hint_count + 1
+      assert new_discard_pile == %{old_discard_pile | blue: [2]}
+      assert current_player == "player_2"
+      assert message == "player_1 discarded a blue 2"
+    end
+
+    test "discarding with 8 hints returns an unchanged game state", %{game: game} do
+      {:ok, new_game} = Game.discard_tile(game, "player_1", 0)
+
+      assert tally_equal?(Game.tally(new_game, "player_1"), Game.tally(game, "player_1"))
+
+      assert Game.tally(new_game, "player_1").message ==
+               "Cannot discard a tile while there are 8 hints"
+    end
+
+    test "return an error when a player makes a move that isn't the current player", %{game: game} do
+      assert {:error, "It is currently player_1's turn"} = Game.discard_tile(game, "player_2", 0)
+    end
+  end
+
   # Check if the tallies has the same state except for the message
   @spec tally_equal?(Game.tally(), Game.tally()) :: boolean()
   defp tally_equal?(tally_1, tally_2) do

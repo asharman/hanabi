@@ -190,6 +190,47 @@ defmodule Hanabi.Game do
     end
   end
 
+  @spec discard_tile(Hanabi.Game.t(), String.t(), non_neg_integer()) ::
+          {:ok, Hanabi.Game.t()} | {:error, String.t()}
+  def discard_tile(game, player_username, _position)
+      when player_username != game.current_player do
+    {:error, "It is currently #{game.current_player}'s turn"}
+  end
+
+  def discard_tile(%__MODULE__{hint_count: 8} = game, _player_username, _position) do
+    {:ok, %__MODULE__{game | message: "Cannot discard a tile while there are 8 hints"}}
+  end
+
+  def discard_tile(game, player_username, position) do
+    with {:ok, player} <- fetch_player(game, player_username),
+         {:ok, tile, updated_player} <- Player.take_tile(player, position) do
+      {new_deck, tiles} = Deck.draw_tiles(game.deck, 1)
+
+      updated_player = Enum.reduce(tiles, updated_player, &Player.deal_tile/2)
+
+      new_players = update_players(game, updated_player)
+
+      new_discard_pile =
+        Map.update(
+          game.discard_pile,
+          Tile.color(tile),
+          [Tile.number(tile)],
+          &[Tile.number(tile) | &1]
+        )
+
+      {:ok,
+       %__MODULE__{
+         game
+         | players: new_players,
+           current_player: next_player(game),
+           deck: new_deck,
+           hint_count: game.hint_count + 1,
+           discard_pile: new_discard_pile,
+           message: "#{player_username} discarded a #{Tile.color(tile)} #{Tile.number(tile)}"
+       }}
+    end
+  end
+
   @spec create_player(String.t(), Deck.t()) :: {Deck.t(), Player.t()}
   defp create_player(username, deck) do
     {new_deck, tile_list} = Deck.draw_tiles(deck, 5)
