@@ -15,11 +15,15 @@ defmodule Hanabi.Game do
     :strikes,
     :hint_count,
     :message,
-    :current_player
+    :current_player,
+    :state,
+    :turns
   ])
 
   @opaque t() :: %__MODULE__{
             deck: Deck.t(),
+            turns: non_neg_integer(),
+            state: :playing | :win | :lose,
             players: list(Player.t()),
             board: board(),
             discard_pile: discard_pile(),
@@ -33,6 +37,7 @@ defmodule Hanabi.Game do
   @typep discard_pile :: %{Tile.tile_color() => list(Tile.tile_number())}
   @type tally :: %{
           deck: non_neg_integer(),
+          state: :playing | :done | :lose,
           hand: list(Tile.tile_hints()),
           players: %{String.t() => list(Tile.t())},
           board: board(),
@@ -56,6 +61,8 @@ defmodule Hanabi.Game do
 
     %__MODULE__{
       deck: updated_deck,
+      turns: Deck.count(updated_deck) + length(initial_players),
+      state: :playing,
       players: initial_players,
       board: initial_board(),
       discard_pile: initial_discard_pile(),
@@ -80,6 +87,8 @@ defmodule Hanabi.Game do
 
     %__MODULE__{
       deck: updated_deck,
+      turns: Deck.count(updated_deck) + length(initial_players),
+      state: :playing,
       players: initial_players,
       board: initial_board(),
       discard_pile: initial_discard_pile(),
@@ -106,6 +115,13 @@ defmodule Hanabi.Game do
     end
   end
 
+  @spec score(Hanabi.Game.t()) :: non_neg_integer()
+  def score(%__MODULE__{state: :lose}), do: 0
+
+  def score(%__MODULE__{board: board}) do
+    Enum.reduce(board, 0, fn {_k, set}, acc -> acc + MapSet.size(set) end)
+  end
+
   @spec play_tile(Hanabi.Game.t(), String.t(), non_neg_integer()) ::
           {:ok, Hanabi.Game.t()} | {:error, String.t()}
   def play_tile(game, player_username, _position) when player_username != game.current_player do
@@ -130,9 +146,11 @@ defmodule Hanabi.Game do
                players: new_players,
                deck: new_deck,
                current_player: next_player(game),
+               turns: game.turns - 1,
                message:
                  "#{player_username} successfully played a #{Tile.color(tile)} #{Tile.number(tile)}"
-           }}
+           }
+           |> check_if_done()}
 
         {:error, _reason} ->
           new_discard_pile =
@@ -151,9 +169,11 @@ defmodule Hanabi.Game do
                deck: new_deck,
                strikes: game.strikes + 1,
                discard_pile: new_discard_pile,
+               turns: game.turns - 1,
                message:
                  "#{player_username} incorrectly played a #{Tile.color(tile)} #{Tile.number(tile)}"
-           }}
+           }
+           |> check_if_done()}
       end
     end
   end
@@ -189,8 +209,10 @@ defmodule Hanabi.Game do
          | players: new_players,
            hint_count: game.hint_count - 1,
            current_player: next_player(game),
+           turns: game.turns - 1,
            message: "#{hinting_player} hinted #{hinted_player} #{value}"
-       }}
+       }
+       |> check_if_done()}
     end
   end
 
@@ -230,8 +252,10 @@ defmodule Hanabi.Game do
            deck: new_deck,
            hint_count: game.hint_count + 1,
            discard_pile: new_discard_pile,
+           turns: game.turns - 1,
            message: "#{player_username} discarded a #{Tile.color(tile)} #{Tile.number(tile)}"
-       }}
+       }
+       |> check_if_done()}
     end
   end
 
@@ -292,6 +316,19 @@ defmodule Hanabi.Game do
       |> Enum.find(fn {_, index} -> index - 1 == current_player_index end)
       |> elem(0)
       |> Player.username()
+    end
+  end
+
+  defp check_if_done(%__MODULE__{strikes: 3} = game), do: %__MODULE__{game | state: :lose}
+  defp check_if_done(%__MODULE__{turns: 0} = game), do: %__MODULE__{game | state: :done}
+
+  defp check_if_done(game) do
+    score = score(game)
+
+    if score == 30 do
+      %__MODULE__{game | state: :done}
+    else
+      game
     end
   end
 

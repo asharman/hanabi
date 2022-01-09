@@ -255,6 +255,134 @@ defmodule HanabiGameTest do
     end
   end
 
+  describe "finishing the game" do
+    test "filling the board ends the game" do
+      initial_deck = [
+        Tile.init(:blue, 5),
+        Tile.init(:blue, 4),
+        Tile.init(:blue, 3),
+        Tile.init(:blue, 2),
+        Tile.init(:blue, 1),
+        Tile.init(:red, 5),
+        Tile.init(:red, 4),
+        Tile.init(:red, 3),
+        Tile.init(:red, 2),
+        Tile.init(:red, 1),
+        Tile.init(:white, 1),
+        Tile.init(:yellow, 1),
+        Tile.init(:white, 2),
+        Tile.init(:yellow, 2),
+        Tile.init(:white, 3),
+        Tile.init(:yellow, 3),
+        Tile.init(:white, 4),
+        Tile.init(:yellow, 4),
+        Tile.init(:white, 5),
+        Tile.init(:yellow, 5),
+        Tile.init(:green, 1),
+        Tile.init(:rainbow, 1),
+        Tile.init(:green, 2),
+        Tile.init(:rainbow, 2),
+        Tile.init(:green, 3),
+        Tile.init(:rainbow, 3),
+        Tile.init(:green, 4),
+        Tile.init(:rainbow, 4),
+        Tile.init(:green, 5),
+        Tile.init(:rainbow, 5),
+        Tile.init(:white, 1),
+        Tile.init(:white, 1),
+        Tile.init(:white, 1),
+        Tile.init(:white, 1),
+        Tile.init(:white, 1),
+        Tile.init(:white, 1),
+        Tile.init(:white, 1),
+        Tile.init(:white, 1),
+        Tile.init(:white, 1),
+        Tile.init(:white, 1)
+      ]
+
+      game = Game.new_game(["player_1", "player_2"], initial_deck)
+
+      {:ok, new_game} =
+        Enum.reduce(1..30, {:ok, game}, fn turn, {_, game_acc} ->
+          player = if rem(turn, 2) == 1, do: "player_1", else: "player_2"
+
+          Game.play_tile(game_acc, player, 0)
+        end)
+
+      tally = Game.tally(new_game, "player_1")
+
+      assert tally.state == :done
+      assert Game.score(new_game) == 30
+    end
+
+    test "running out of turns when the deck is empty" do
+      initial_deck = [
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1)
+      ]
+
+      game = Game.new_game(["player_1", "player_2"], initial_deck)
+
+      assert %{deck: 1} = Game.tally(game, "player_1")
+
+      {:ok, new_game} =
+        Game.play_tile(game, "player_1", 0)
+        |> elem(1)
+        |> Game.play_tile("player_2", 0)
+        |> elem(1)
+        |> Game.play_tile("player_1", 0)
+
+      tally = Game.tally(new_game, "player_1")
+
+      assert tally.state == :done
+      assert Game.score(new_game) == 1
+    end
+
+    test "lose the game after 3 strikes" do
+      initial_deck = [
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1)
+      ]
+
+      game = Game.new_game(["player_1", "player_2"], initial_deck)
+
+      {:ok, new_game} =
+        Game.play_tile(game, "player_1", 0)
+        |> elem(1)
+        |> Game.play_tile("player_2", 0)
+        |> elem(1)
+        |> Game.play_tile("player_1", 0)
+        |> elem(1)
+        |> Game.play_tile("player_2", 0)
+
+      tally = Game.tally(new_game, "player_1")
+
+      assert tally.state == :lose
+      assert Game.score(new_game) == 0
+    end
+  end
+
   # Check if the tallies has the same state except for the message
   @spec tally_equal?(Game.tally(), Game.tally()) :: boolean()
   defp tally_equal?(tally_1, tally_2) do
@@ -265,7 +393,8 @@ defmodule HanabiGameTest do
       tally_1.players == tally_2.players,
       tally_1.discard_pile == tally_2.discard_pile,
       tally_1.strikes == tally_2.strikes,
-      tally_1.current_player == tally_2.current_player
+      tally_1.current_player == tally_2.current_player,
+      tally_1.state == tally_2.state
     ]
     |> Enum.all?()
   end
