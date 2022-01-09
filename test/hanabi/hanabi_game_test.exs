@@ -49,7 +49,7 @@ defmodule HanabiGameTest do
     end
 
     test "returns a new board with the tile placed when an acceptable play is made", %{game: game} do
-      new_game = Game.play_tile(game, "player_1", 1)
+      {:ok, new_game} = Game.play_tile(game, "player_1", 1)
 
       %{discard_pile: expected_discard_pile, strikes: expected_strikes, board: board} =
         Game.tally(game, "player_1")
@@ -73,7 +73,7 @@ defmodule HanabiGameTest do
     test "returns a new game with 1 more strike and the tile added to the discard pile", %{
       game: game
     } do
-      new_game = Game.play_tile(game, "player_1", 0)
+      {:ok, new_game} = Game.play_tile(game, "player_1", 0)
 
       %{discard_pile: discard_pile, strikes: strikes, board: expected_board} =
         Game.tally(game, "player_1")
@@ -92,6 +92,10 @@ defmodule HanabiGameTest do
       assert new_board == expected_board
       assert new_strikes == strikes + 1
       assert new_discard_pile == expected_discard
+    end
+
+    test "return an error when a player makes a move that isn't the current player", %{game: game} do
+      assert {:error, "It is currently player_1's turn"} = Game.play_tile(game, "player_2", 0)
     end
   end
 
@@ -119,9 +123,11 @@ defmodule HanabiGameTest do
          %{game: game} do
       %{hint_count: initial_hint_count} = Game.tally(game, "player_1")
 
-      new_game =
+      {:ok, new_game} =
         Game.give_hint(game, "player_1", "player_2", :red)
+        |> elem(1)
         |> Game.give_hint("player_2", "player_1", :red)
+        |> elem(1)
         |> Game.give_hint("player_1", "player_2", :blue)
 
       %{
@@ -158,14 +164,21 @@ defmodule HanabiGameTest do
     end
 
     test "hinting without any hints returns the same game state", %{game: game} do
-      hinted_game =
+      {:ok, hinted_game} =
         Game.give_hint(game, "player_1", "player_2", :red)
+        |> elem(1)
         |> Game.give_hint("player_2", "player_1", :red)
+        |> elem(1)
         |> Game.give_hint("player_1", "player_2", :blue)
+        |> elem(1)
         |> Game.give_hint("player_2", "player_1", :blue)
+        |> elem(1)
         |> Game.give_hint("player_1", "player_2", :green)
+        |> elem(1)
         |> Game.give_hint("player_2", "player_1", :green)
+        |> elem(1)
         |> Game.give_hint("player_1", "player_2", :white)
+        |> elem(1)
         |> Game.give_hint("player_2", "player_1", :white)
 
       hinted_game_tally = Game.tally(hinted_game, "player_1")
@@ -173,10 +186,16 @@ defmodule HanabiGameTest do
       %{message: message} =
         new_game_tally =
         Game.give_hint(hinted_game, "player_1", "player_2", :yellow)
+        |> elem(1)
         |> Game.tally("player_1")
 
       assert tally_equal?(new_game_tally, hinted_game_tally)
       assert message == "There are no hints left, choose another action"
+    end
+
+    test "return an error when a player makes a move that isn't the current player", %{game: game} do
+      assert {:error, "It is currently player_1's turn"} =
+               Game.give_hint(game, "player_2", "player_1", 3)
     end
   end
 

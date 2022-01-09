@@ -106,7 +106,12 @@ defmodule Hanabi.Game do
     end
   end
 
-  @spec play_tile(Hanabi.Game.t(), String.t(), non_neg_integer()) :: Hanabi.Game.t()
+  @spec play_tile(Hanabi.Game.t(), String.t(), non_neg_integer()) ::
+          {:ok, Hanabi.Game.t()} | {:error, String.t()}
+  def play_tile(game, player_username, _position) when player_username != game.current_player do
+    {:error, "It is currently #{game.current_player}'s turn"}
+  end
+
   def play_tile(game, player_username, position) do
     with {:ok, player} <- fetch_player(game, player_username),
          {:ok, tile, updated_player} <- Player.take_tile(player, position) do
@@ -118,13 +123,14 @@ defmodule Hanabi.Game do
 
       case add_tile_to_board(game.board, tile) do
         {:ok, new_board} ->
-          %__MODULE__{
-            game
-            | board: new_board,
-              players: new_players,
-              deck: new_deck,
-              current_player: next_player(game)
-          }
+          {:ok,
+           %__MODULE__{
+             game
+             | board: new_board,
+               players: new_players,
+               deck: new_deck,
+               current_player: next_player(game)
+           }}
 
         {:error, _reason} ->
           new_discard_pile =
@@ -135,14 +141,15 @@ defmodule Hanabi.Game do
               &[Tile.number(tile) | &1]
             )
 
-          %__MODULE__{
-            game
-            | players: new_players,
-              current_player: next_player(game),
-              deck: new_deck,
-              strikes: game.strikes + 1,
-              discard_pile: new_discard_pile
-          }
+          {:ok,
+           %__MODULE__{
+             game
+             | players: new_players,
+               current_player: next_player(game),
+               deck: new_deck,
+               strikes: game.strikes + 1,
+               discard_pile: new_discard_pile
+           }}
       end
     end
   end
@@ -152,12 +159,18 @@ defmodule Hanabi.Game do
           String.t(),
           String.t(),
           Hanabi.Tile.tile_color() | Hanabi.Tile.tile_number()
-        ) :: Hanabi.Game.t()
+        ) :: {:ok, Hanabi.Game.t()} | {:error, String.t()}
+  def give_hint(game, hinting_player, _hinted_player, _value)
+      when hinting_player != game.current_player do
+    {:error, "It is currently #{game.current_player}'s turn"}
+  end
+
   def give_hint(%__MODULE__{hint_count: 0} = game, _hinting_player, _hinted_player, _value) do
-    %__MODULE__{
-      game
-      | message: "There are no hints left, choose another action"
-    }
+    {:ok,
+     %__MODULE__{
+       game
+       | message: "There are no hints left, choose another action"
+     }}
   end
 
   def give_hint(game, hinting_player, hinted_player, value) do
@@ -166,13 +179,14 @@ defmodule Hanabi.Game do
 
       new_players = update_players(game, updated_player)
 
-      %__MODULE__{
-        game
-        | players: new_players,
-          hint_count: game.hint_count - 1,
-          current_player: next_player(game),
-          message: "#{hinting_player} hinted #{hinted_player} #{value}"
-      }
+      {:ok,
+       %__MODULE__{
+         game
+         | players: new_players,
+           hint_count: game.hint_count - 1,
+           current_player: next_player(game),
+           message: "#{hinting_player} hinted #{hinted_player} #{value}"
+       }}
     end
   end
 
