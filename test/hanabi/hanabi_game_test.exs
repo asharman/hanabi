@@ -376,11 +376,13 @@ defmodule HanabiGameTest do
       assert %{deck: 1} = Game.tally(game, "player_1")
 
       {:ok, new_game} =
-        Game.play_tile(game, "player_1", 0)
+        Game.give_hint(game, "player_1", "player_2", :red)
         |> elem(1)
         |> Game.play_tile("player_2", 0)
         |> elem(1)
-        |> Game.play_tile("player_1", 0)
+        |> Game.give_hint("player_1", "player_2", 1)
+        |> elem(1)
+        |> Game.play_tile("player_2", 0)
 
       tally = Game.tally(new_game, "player_1")
 

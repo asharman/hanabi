@@ -203,13 +203,15 @@ defmodule Hanabi.Game do
 
       new_players = update_players(game, updated_player)
 
+      new_turns = if Deck.count(game.deck) == 0, do: game.turns - 1, else: game.turns
+
       {:ok,
        %__MODULE__{
          game
          | players: new_players,
            hint_count: game.hint_count - 1,
            current_player: next_player(game),
-           turns: game.turns - 1,
+           turns: new_turns,
            message: "#{hinting_player} hinted #{hinted_player} #{value}"
        }
        |> check_if_done()}
