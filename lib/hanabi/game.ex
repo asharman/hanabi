@@ -7,7 +7,16 @@ defmodule Hanabi.Game do
   alias Hanabi.Player
   alias Hanabi.Tile
 
-  defstruct([:deck, :players, :board, :discard_pile, :strikes, :hint_count, :message])
+  defstruct([
+    :deck,
+    :players,
+    :board,
+    :discard_pile,
+    :strikes,
+    :hint_count,
+    :message,
+    :current_player
+  ])
 
   @opaque t() :: %__MODULE__{
             deck: Deck.t(),
@@ -16,6 +25,7 @@ defmodule Hanabi.Game do
             discard_pile: discard_pile(),
             strikes: 0 | 1 | 2,
             hint_count: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8,
+            current_player: String.t(),
             message: String.t()
           }
 
@@ -29,11 +39,12 @@ defmodule Hanabi.Game do
           discard_pile: discard_pile(),
           strikes: 0 | 1 | 2,
           hint_count: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8,
+          current_player: String.t(),
           message: String.t()
         }
 
   @spec new_game(list(String.t())) :: Hanabi.Game.t()
-  def new_game(players) do
+  def new_game([first_player | _] = players) do
     deck = Deck.init()
 
     {updated_deck, initial_players} =
@@ -50,13 +61,14 @@ defmodule Hanabi.Game do
       discard_pile: initial_discard_pile(),
       strikes: 0,
       hint_count: 8,
+      current_player: first_player,
       message: "Welcome to Hanabi!"
     }
   end
 
   # Used for testing a non-random deck
   @doc false
-  def new_game(players, deck) do
+  def new_game([first_player | _] = players, deck) do
     deck = Deck.init(deck)
 
     {updated_deck, initial_players} =
@@ -73,6 +85,7 @@ defmodule Hanabi.Game do
       discard_pile: initial_discard_pile(),
       strikes: 0,
       hint_count: 8,
+      current_player: first_player,
       message: "Welcome to Hanabi!"
     }
   end
@@ -105,7 +118,13 @@ defmodule Hanabi.Game do
 
       case add_tile_to_board(game.board, tile) do
         {:ok, new_board} ->
-          %__MODULE__{game | board: new_board, players: new_players, deck: new_deck}
+          %__MODULE__{
+            game
+            | board: new_board,
+              players: new_players,
+              deck: new_deck,
+              current_player: next_player(game)
+          }
 
         {:error, _reason} ->
           new_discard_pile =
@@ -119,6 +138,7 @@ defmodule Hanabi.Game do
           %__MODULE__{
             game
             | players: new_players,
+              current_player: next_player(game),
               deck: new_deck,
               strikes: game.strikes + 1,
               discard_pile: new_discard_pile
@@ -150,6 +170,7 @@ defmodule Hanabi.Game do
         game
         | players: new_players,
           hint_count: game.hint_count - 1,
+          current_player: next_player(game),
           message: "#{hinting_player} hinted #{hinted_player} #{value}"
       }
     end
@@ -197,6 +218,22 @@ defmodule Hanabi.Game do
         do: updated_player,
         else: player
     end)
+  end
+
+  @spec next_player(Hanabi.Game.t()) :: String.t()
+  defp next_player(%__MODULE__{current_player: current_player, players: players}) do
+    current_player_index = Enum.find_index(players, &(Player.username(&1) == current_player))
+
+    if current_player_index == length(players) - 1 do
+      List.first(players)
+      |> Player.username()
+    else
+      players
+      |> Enum.with_index()
+      |> Enum.find(fn {_, index} -> index - 1 == current_player_index end)
+      |> elem(0)
+      |> Player.username()
+    end
   end
 
   defp initial_board() do

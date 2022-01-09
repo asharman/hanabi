@@ -23,6 +23,7 @@ defmodule HanabiGameTest do
              hint_count: 8,
              strikes: 0,
              message: "Welcome to Hanabi!",
+             current_player: "player_1",
              players: %{
                "player_2" => player_2_hand
              },
@@ -42,7 +43,7 @@ defmodule HanabiGameTest do
         Tile.init(:blue, 2)
       ]
 
-      game = Game.new_game(["player_1", "player_2"], initial_deck)
+      game = Game.new_game(["player_1", "player_3", "player_2"], initial_deck)
 
       %{game: game}
     end
@@ -56,9 +57,14 @@ defmodule HanabiGameTest do
       # Playing the (:red, 1) tile that is in the setup initial_deck
       expected_board = %{board | red: MapSet.new([1])}
 
-      %{discard_pile: new_discard_pile, strikes: new_strikes, board: new_board} =
-        Game.tally(new_game, "player_1")
+      %{
+        discard_pile: new_discard_pile,
+        strikes: new_strikes,
+        board: new_board,
+        current_player: current_player
+      } = Game.tally(new_game, "player_1")
 
+      assert current_player == "player_2"
       assert new_board == expected_board
       assert new_strikes == expected_strikes
       assert new_discard_pile == expected_discard_pile
@@ -75,9 +81,14 @@ defmodule HanabiGameTest do
       # Playing the (:blue, 2) tile that is in the setup initial_deck
       expected_discard = %{discard_pile | blue: [2]}
 
-      %{discard_pile: new_discard_pile, strikes: new_strikes, board: new_board} =
-        Game.tally(new_game, "player_1")
+      %{
+        discard_pile: new_discard_pile,
+        strikes: new_strikes,
+        board: new_board,
+        current_player: current_player
+      } = Game.tally(new_game, "player_1")
 
+      assert current_player == "player_2"
       assert new_board == expected_board
       assert new_strikes == strikes + 1
       assert new_discard_pile == expected_discard
@@ -113,12 +124,17 @@ defmodule HanabiGameTest do
         |> Game.give_hint("player_2", "player_1", :red)
         |> Game.give_hint("player_1", "player_2", :blue)
 
-      %{players: %{"player_2" => player_2_hand}, hint_count: new_hint_count, message: message} =
-        Game.tally(new_game, "player_1")
+      %{
+        players: %{"player_2" => player_2_hand},
+        hint_count: new_hint_count,
+        message: message,
+        current_player: current_player
+      } = Game.tally(new_game, "player_1")
 
       %{hand: player_2_hints} = Game.tally(new_game, "player_2")
 
       assert new_hint_count == initial_hint_count - 3
+      assert current_player == "player_2"
 
       assert Enum.all?(player_2_hand, fn %{hints: %{color: color_hints}} ->
                MapSet.member?(color_hints, :red) and MapSet.member?(color_hints, :blue)
@@ -173,7 +189,8 @@ defmodule HanabiGameTest do
       tally_1.hint_count == tally_2.hint_count,
       tally_1.players == tally_2.players,
       tally_1.discard_pile == tally_2.discard_pile,
-      tally_1.strikes == tally_2.strikes
+      tally_1.strikes == tally_2.strikes,
+      tally_1.current_player == tally_2.current_player
     ]
     |> Enum.all?()
   end
