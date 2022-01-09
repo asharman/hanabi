@@ -40,10 +40,23 @@ defmodule HanabiGameTest do
     setup do
       initial_deck = [
         Tile.init(:red, 1),
-        Tile.init(:blue, 2)
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:blue, 2),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1),
+        Tile.init(:red, 1)
       ]
 
-      game = Game.new_game(["player_1", "player_3", "player_2"], initial_deck)
+      game = Game.new_game(["player_1", "player_2", "player_3"], initial_deck)
 
       %{game: game}
     end
@@ -65,16 +78,17 @@ defmodule HanabiGameTest do
         message: message
       } = Game.tally(new_game, "player_1")
 
-      assert current_player == "player_2"
+      assert current_player == "player_3"
       assert new_board == expected_board
       assert new_strikes == expected_strikes
       assert new_discard_pile == expected_discard_pile
       assert message == "player_1 successfully played a red 1"
     end
 
-    test "returns a new game with 1 more strike and the tile added to the discard pile", %{
-      game: game
-    } do
+    test "returns a new game with 1 more strike and the tile added to the discard pile when playing a tile that isn't ready yet",
+         %{
+           game: game
+         } do
       {:ok, new_game} = Game.play_tile(game, "player_1", 0)
 
       %{discard_pile: discard_pile, strikes: strikes, board: expected_board} =
@@ -91,11 +105,38 @@ defmodule HanabiGameTest do
         message: message
       } = Game.tally(new_game, "player_1")
 
-      assert current_player == "player_2"
+      assert current_player == "player_3"
       assert new_board == expected_board
       assert new_strikes == strikes + 1
       assert new_discard_pile == expected_discard
       assert message == "player_1 incorrectly played a blue 2"
+    end
+
+    test "returns a new game with 1 more strike and the tile added to the discard pile when playing a tile that has already been played",
+         %{
+           game: game
+         } do
+      {:ok, new_game} =
+        Game.play_tile(game, "player_1", 1)
+        |> elem(1)
+        |> Game.play_tile("player_3", 0)
+
+      %{discard_pile: discard_pile, strikes: strikes} = Game.tally(game, "player_1")
+
+      # Playing the (:red, 1) tile that is in the setup initial_deck
+      expected_discard = %{discard_pile | red: [1]}
+
+      %{
+        discard_pile: new_discard_pile,
+        strikes: new_strikes,
+        current_player: current_player,
+        message: message
+      } = Game.tally(new_game, "player_1")
+
+      assert current_player == "player_2"
+      assert new_strikes == strikes + 1
+      assert new_discard_pile == expected_discard
+      assert message == "player_3 incorrectly played a red 1"
     end
 
     test "return an error when a player makes a move that isn't the current player", %{game: game} do
