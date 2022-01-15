@@ -1,5 +1,6 @@
 defmodule Hanabi do
   alias Hanabi.Game
+  alias Hanabi.LobbyServer
 
   @moduledoc """
   Hanabi keeps the contexts that define your domain
@@ -10,5 +11,19 @@ defmodule Hanabi do
   """
   def new_game(players) do
     Game.new_game(players)
+  end
+
+  def start_lobby(name) do
+    LobbyServer.start_link(name)
+  end
+
+  @spec lobby_players(String.t()) :: list(String.t())
+  def lobby_players(name) do
+    LobbyServer.players(name)
+  end
+
+  @spec add_player_to_lobby(String.t(), String.t()) :: :ok
+  def add_player_to_lobby(name, new_player) do
+    LobbyServer.add_player(name, new_player)
   end
 end
