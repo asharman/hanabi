@@ -19,6 +19,11 @@ defmodule Hanabi.Lobby do
     Map.update(lobby, :players, MapSet.new([new_player]), &MapSet.put(&1, new_player))
   end
 
+  @spec remove_player(Hanabi.Lobby.t(), String.t()) :: Hanabi.Lobby.t()
+  def remove_player(%__MODULE__{} = lobby, player) do
+    Map.update(lobby, :players, MapSet.new(), &MapSet.delete(&1, player))
+  end
+
   @spec players(Hanabi.Lobby.t()) :: MapSet.t(String.t())
   def players(%__MODULE__{players: players}), do: players
 end

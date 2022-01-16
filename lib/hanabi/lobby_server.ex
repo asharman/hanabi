@@ -11,9 +11,14 @@ defmodule Hanabi.LobbyServer do
     GenServer.call(via_tuple(name), :players)
   end
 
-  @spec add_player(String.t(), String.t()) :: String.t()
+  @spec add_player(String.t(), String.t()) :: :ok
   def add_player(name, new_player) do
     GenServer.cast(via_tuple(name), {:add_player, new_player})
+  end
+
+  @spec remove_player(String.t(), String.t()) :: :ok
+  def remove_player(name, player) do
+    GenServer.cast(via_tuple(name), {:remove_player, player})
   end
 
   @impl GenServer
@@ -31,6 +36,11 @@ defmodule Hanabi.LobbyServer do
   @impl GenServer
   def handle_cast({:add_player, new_player}, lobby) do
     {:noreply, Lobby.add_player(lobby, new_player)}
+  end
+
+  @impl GenServer
+  def handle_cast({:remove_player, player}, lobby) do
+    {:noreply, Lobby.remove_player(lobby, player)}
   end
 
   defp via_tuple(name) do

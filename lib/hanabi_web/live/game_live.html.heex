@@ -1,8 +1,2 @@
-<.form let={f} for={@changeset} as={:player} phx-submit="add_player">
-<%= label f, :username %>
-<%= text_input f, :username %>
-<%= error_tag f, :username %>
-<%= submit "Join Game" %>
-</.form>
-
+<p>Your username: <%= @username %></p>
 <p>Current players: <%= @players %></p>

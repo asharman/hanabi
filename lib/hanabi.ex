@@ -26,4 +26,9 @@ defmodule Hanabi do
   def add_player_to_lobby(name, new_player) do
     LobbyServer.add_player(name, new_player)
   end
+
+  @spec remove_player_from_lobby(String.t(), String.t()) :: :ok
+  def remove_player_from_lobby(name, player) do
+    LobbyServer.remove_player(name, player)
+  end
 end

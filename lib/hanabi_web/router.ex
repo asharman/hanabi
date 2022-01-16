@@ -18,7 +18,9 @@ defmodule HanabiWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
-    live "/game/:name", GameLive
+    get "/lobby/:name", LobbyController, :show
+    post "/lobby/:name", LobbyController, :join
+    get "/game/:name", GameController, :join
   end
 
   # Other scopes may use custom stacks.

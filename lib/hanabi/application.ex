@@ -14,6 +14,7 @@ defmodule Hanabi.Application do
       {Phoenix.PubSub, name: Hanabi.PubSub},
       # Start the Endpoint (http/https)
       HanabiWeb.Endpoint,
+      HanabiWeb.LiveMonitor,
       # Start a worker by calling: Hanabi.Worker.start_link(arg)
       # {Hanabi.Worker, arg}
       {DynamicSupervisor, strategy: :one_for_one, name: Hanabi.LobbySupervisor},
