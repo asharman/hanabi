@@ -14,14 +14,27 @@ defmodule HanabiWeb.GameLive do
     Hanabi.start_lobby(name)
     Hanabi.add_player_to_lobby(name, current_player)
     players = Hanabi.lobby_players(name)
+    game_state = Hanabi.get_tally(name, current_player)
 
     socket =
       socket
+      |> assign(:game_state, game_state)
       |> assign(:username, current_player)
       |> assign(:players, players)
       |> assign(:name, name)
 
     {:ok, socket}
+  end
+
+  def handle_event("start_game", _, socket) do
+    Hanabi.new_game(socket.assigns.name)
+    Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{socket.assigns.name}", :start_game)
+    {:noreply, socket}
+  end
+
+  def handle_info(:start_game, socket) do
+    tally = Hanabi.get_tally(socket.assigns.name, socket.assigns.username)
+    {:noreply, assign(socket, :game_state, tally)}
   end
 
   def handle_info(:players_updated, socket) do

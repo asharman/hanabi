@@ -1,16 +1,19 @@
 defmodule Hanabi.Lobby do
-  defstruct [:name, :players]
+  defstruct [:name, :players, :game]
+  alias Hanabi.Game
 
   @opaque t() :: %__MODULE__{
             name: String.t(),
-            players: MapSet.t(String.t())
+            players: MapSet.t(String.t()),
+            game: Hanabi.Game.t() | nil
           }
 
   @spec new_room(String.t()) :: Hanabi.Lobby.t()
   def new_room(room_name) do
     %__MODULE__{
       name: room_name,
-      players: MapSet.new()
+      players: MapSet.new(),
+      game: nil
     }
   end
 
@@ -26,4 +29,22 @@ defmodule Hanabi.Lobby do
 
   @spec players(Hanabi.Lobby.t()) :: MapSet.t(String.t())
   def players(%__MODULE__{players: players}), do: players
+
+  @spec start_game(Hanabi.Lobby.t()) :: Hanabi.Lobby.t()
+  def start_game(%__MODULE__{players: players} = lobby) do
+    game =
+      MapSet.to_list(players)
+      |> Game.new_game()
+
+    %__MODULE__{lobby | game: game}
+  end
+
+  @spec tally(Hanabi.Lobby.t(), String.t()) :: Hanabi.Game.tally() | {:error, String.t()}
+  def tally(%__MODULE__{game: nil}, _player_name) do
+    :game_not_started
+  end
+
+  def tally(%__MODULE__{game: game}, player_name) do
+    Game.tally(game, player_name)
+  end
 end

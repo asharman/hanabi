@@ -21,6 +21,15 @@ defmodule Hanabi.LobbyServer do
     GenServer.cast(via_tuple(name), {:remove_player, player})
   end
 
+  @spec new_game(String.t()) :: :ok
+  def new_game(name) do
+    GenServer.cast(via_tuple(name), :new_game)
+  end
+
+  def get_tally(name, player_name) do
+    GenServer.call(via_tuple(name), {:tally, player_name})
+  end
+
   @impl GenServer
   def init(name) do
     lobby = Lobby.new_room(name)
@@ -34,6 +43,11 @@ defmodule Hanabi.LobbyServer do
   end
 
   @impl GenServer
+  def handle_call({:tally, player_name}, _from, lobby) do
+    {:reply, Lobby.tally(lobby, player_name), lobby}
+  end
+
+  @impl GenServer
   def handle_cast({:add_player, new_player}, lobby) do
     {:noreply, Lobby.add_player(lobby, new_player)}
   end
@@ -41,6 +55,11 @@ defmodule Hanabi.LobbyServer do
   @impl GenServer
   def handle_cast({:remove_player, player}, lobby) do
     {:noreply, Lobby.remove_player(lobby, player)}
+  end
+
+  @impl GenServer
+  def handle_cast(:new_game, lobby) do
+    {:noreply, Lobby.start_game(lobby)}
   end
 
   defp via_tuple(name) do

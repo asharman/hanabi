@@ -1,5 +1,4 @@
 defmodule Hanabi do
-  alias Hanabi.Game
   alias Hanabi.LobbyServer
 
   @moduledoc """
@@ -9,10 +8,6 @@ defmodule Hanabi do
   Contexts are also responsible for managing your data, regardless
   if it comes from the database, an external API or others.
   """
-  def new_game(players) do
-    Game.new_game(players)
-  end
-
   def start_lobby(name) do
     LobbyServer.start_link(name)
   end
@@ -30,5 +25,20 @@ defmodule Hanabi do
   @spec remove_player_from_lobby(String.t(), String.t()) :: :ok
   def remove_player_from_lobby(name, player) do
     LobbyServer.remove_player(name, player)
+  end
+
+  @spec new_game(String.t()) :: :ok
+  def new_game(name) do
+    LobbyServer.new_game(name)
+  end
+
+  @spec get_tally(String.t(), String.t()) :: Hanabi.Game.tally() | {:error, String.t()} | nil
+  def get_tally(lobby_name, player_name) do
+    case LobbyServer.get_tally(lobby_name, player_name) do
+      :game_not_started ->
+        nil
+      tally ->
+        tally
+    end
   end
 end
