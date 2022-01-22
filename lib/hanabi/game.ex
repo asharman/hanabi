@@ -189,12 +189,8 @@ defmodule Hanabi.Game do
     {:error, "It is currently #{game.current_player}'s turn"}
   end
 
-  def give_hint(%__MODULE__{hint_count: 0} = game, _hinting_player, _hinted_player, _value) do
-    {:ok,
-     %__MODULE__{
-       game
-       | message: "There are no hints left, choose another action"
-     }}
+  def give_hint(%__MODULE__{hint_count: 0}, _hinting_player, _hinted_player, _value) do
+    {:error, "There are no hints left, choose another action"}
   end
 
   def give_hint(game, hinting_player, hinted_player, value) do
@@ -225,8 +221,8 @@ defmodule Hanabi.Game do
     {:error, "It is currently #{game.current_player}'s turn"}
   end
 
-  def discard_tile(%__MODULE__{hint_count: 8} = game, _player_username, _position) do
-    {:ok, %__MODULE__{game | message: "Cannot discard a tile while there are 8 hints"}}
+  def discard_tile(%__MODULE__{hint_count: 8}, _player_username, _position) do
+    {:error, "Cannot discard a tile while there are 8 hints"}
   end
 
   def discard_tile(game, player_username, position) do

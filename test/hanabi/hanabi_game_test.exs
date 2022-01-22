@@ -208,7 +208,7 @@ defmodule HanabiGameTest do
       assert message == "player_1 hinted player_2 blue"
     end
 
-    test "hinting without any hints returns the same game state", %{game: game} do
+    test "hinting without any hints returns an error", %{game: game} do
       {:ok, hinted_game} =
         Game.give_hint(game, "player_1", "player_2", :red)
         |> elem(1)
@@ -226,16 +226,8 @@ defmodule HanabiGameTest do
         |> elem(1)
         |> Game.give_hint("player_2", "player_1", :white)
 
-      hinted_game_tally = Game.tally(hinted_game, "player_1")
-
-      %{message: message} =
-        new_game_tally =
-        Game.give_hint(hinted_game, "player_1", "player_2", :yellow)
-        |> elem(1)
-        |> Game.tally("player_1")
-
-      assert tally_equal?(new_game_tally, hinted_game_tally)
-      assert message == "There are no hints left, choose another action"
+      assert {:error, "There are no hints left, choose another action"} =
+               Game.give_hint(hinted_game, "player_1", "player_2", :yellow)
     end
 
     test "return an error when a player makes a move that isn't the current player", %{game: game} do
@@ -282,13 +274,9 @@ defmodule HanabiGameTest do
       assert message == "player_1 discarded a blue 2"
     end
 
-    test "discarding with 8 hints returns an unchanged game state", %{game: game} do
-      {:ok, new_game} = Game.discard_tile(game, "player_1", 0)
-
-      assert tally_equal?(Game.tally(new_game, "player_1"), Game.tally(game, "player_1"))
-
-      assert Game.tally(new_game, "player_1").message ==
-               "Cannot discard a tile while there are 8 hints"
+    test "discarding with 8 hints returns an error", %{game: game} do
+      {:error, "Cannot discard a tile while there are 8 hints"} =
+        Game.discard_tile(game, "player_1", 0)
     end
 
     test "return an error when a player makes a move that isn't the current player", %{game: game} do
@@ -424,22 +412,6 @@ defmodule HanabiGameTest do
       assert tally.state == :lose
       assert Game.score(new_game) == 0
     end
-  end
-
-  # Check if the tallies has the same state except for the message
-  @spec tally_equal?(Game.tally(), Game.tally()) :: boolean()
-  defp tally_equal?(tally_1, tally_2) do
-    [
-      tally_1.board == tally_2.board,
-      tally_1.deck == tally_2.deck,
-      tally_1.hint_count == tally_2.hint_count,
-      tally_1.players == tally_2.players,
-      tally_1.discard_pile == tally_2.discard_pile,
-      tally_1.strikes == tally_2.strikes,
-      tally_1.current_player == tally_2.current_player,
-      tally_1.state == tally_2.state
-    ]
-    |> Enum.all?()
   end
 
   defp empty_board() do

@@ -3,7 +3,7 @@
 
 <%= if @game_state do %>
     <HanabiWeb.GameBoard.board game={@game_state} />
-<%= else %>
+<% else %>
     <%= if length(@players) > 1 do %>
         <button phx-click="start_game">Start Game</button>
     <% end %>
