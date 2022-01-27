@@ -31,6 +31,20 @@ defmodule Hanabi.Tile do
   @spec number(Hanabi.Tile.t()) :: tile_number()
   def number(%__MODULE__{number: number}), do: number
 
+  @spec parse_value(String.t()) :: {:error, String.t()} | {:ok, tile_color()}
+  def parse_value("red"), do: {:ok, :red}
+  def parse_value("blue"), do: {:ok, :blue}
+  def parse_value("green"), do: {:ok, :green}
+  def parse_value("yellow"), do: {:ok, :yellow}
+  def parse_value("white"), do: {:ok, :white}
+  def parse_value("rainbow"), do: {:ok, :rainbow}
+  def parse_value("1"), do: {:ok, 1}
+  def parse_value("2"), do: {:ok, 2}
+  def parse_value("3"), do: {:ok, 3}
+  def parse_value("4"), do: {:ok, 4}
+  def parse_value("5"), do: {:ok, 5}
+  def parse_value(_invalid_value), do: {:error, "Invalid Hint Value"}
+
   @spec equal?(Hanabi.Tile.t(), Hanabi.Tile.t()) :: boolean()
   def equal?(left, right) do
     color(left) == color(right) and number(left) == number(right)

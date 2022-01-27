@@ -11,6 +11,10 @@ defmodule Hanabi.LobbyServer do
     GenServer.call(via_tuple(name), :players)
   end
 
+  def make_move(name, player, hint) do
+    GenServer.call(via_tuple(name), {:make_move, player, hint})
+  end
+
   @spec add_player(String.t(), String.t()) :: :ok
   def add_player(name, new_player) do
     GenServer.cast(via_tuple(name), {:add_player, new_player})
@@ -45,6 +49,17 @@ defmodule Hanabi.LobbyServer do
   @impl GenServer
   def handle_call({:tally, player_name}, _from, lobby) do
     {:reply, Lobby.tally(lobby, player_name), lobby}
+  end
+
+  @impl GenServer
+  def handle_call({:make_move, player, move}, _from, lobby) do
+    case Lobby.make_move(lobby, player, move) do
+      {:ok, new_lobby} ->
+        {:reply, :ok, new_lobby}
+
+      error_response ->
+        {:reply, error_response, lobby}
+    end
   end
 
   @impl GenServer

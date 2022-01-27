@@ -37,8 +37,15 @@ defmodule Hanabi do
     case LobbyServer.get_tally(lobby_name, player_name) do
       :game_not_started ->
         nil
+
       tally ->
         tally
     end
+  end
+
+  # @typep move() :: {:hint_given, %{to: String.t(), value: String.t()}} | :discard | :play_tile
+  # @spec make_move(String.t(), String.t(), move()) :: :ok | {:error, String.t()}
+  def make_move(lobby, player_name, move) do
+    LobbyServer.make_move(lobby, player_name, move)
   end
 end

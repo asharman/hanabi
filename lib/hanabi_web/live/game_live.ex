@@ -28,11 +28,26 @@ defmodule HanabiWeb.GameLive do
 
   def handle_event("start_game", _, socket) do
     Hanabi.new_game(socket.assigns.name)
-    Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{socket.assigns.name}", :start_game)
+    Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{socket.assigns.name}", :game_updated)
     {:noreply, socket}
   end
 
-  def handle_info(:start_game, socket) do
+  def handle_event("hint_given", %{"player" => player, "hint" => hint}, socket) do
+    case Hanabi.make_move(
+           socket.assigns.name,
+           socket.assigns.username,
+           {:give_hint, %{to: player, value: hint}}
+         ) do
+      :ok ->
+        Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{socket.assigns.name}", :game_updated)
+        {:noreply, socket}
+
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  def handle_info(:game_updated, socket) do
     tally = Hanabi.get_tally(socket.assigns.name, socket.assigns.username)
     {:noreply, assign(socket, :game_state, tally)}
   end

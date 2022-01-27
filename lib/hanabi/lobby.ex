@@ -1,6 +1,7 @@
 defmodule Hanabi.Lobby do
   defstruct [:name, :players, :game]
   alias Hanabi.Game
+  alias Hanabi.Tile
 
   @opaque t() :: %__MODULE__{
             name: String.t(),
@@ -46,5 +47,17 @@ defmodule Hanabi.Lobby do
 
   def tally(%__MODULE__{game: game}, player_name) do
     Game.tally(game, player_name)
+  end
+
+  def make_move(%__MODULE__{game: game} = lobby, player, {:give_hint, params}) do
+    with {:ok, value} <- Tile.parse_value(params.value) do
+      case Game.give_hint(game, player, params.to, value) do
+        {:ok, new_game} ->
+          {:ok, %__MODULE__{lobby | game: new_game}}
+
+        error_response ->
+          error_response
+      end
+    end
   end
 end

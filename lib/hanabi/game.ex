@@ -37,7 +37,6 @@ defmodule Hanabi.Game do
   @typep discard_pile :: %{Tile.tile_color() => list(Tile.tile_number())}
   @type tally :: %{
           deck: non_neg_integer(),
-          state: :playing | :done | :lose,
           hand: list(Tile.tile_hints()),
           players: %{String.t() => list(Tile.t())},
           board: board(),
