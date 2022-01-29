@@ -31,7 +31,7 @@ defmodule Hanabi.Tile do
   @spec number(Hanabi.Tile.t()) :: tile_number()
   def number(%__MODULE__{number: number}), do: number
 
-  @spec parse_value(String.t()) :: {:error, String.t()} | {:ok, tile_color()}
+  @spec parse_value(String.t()) :: {:error, String.t()} | {:ok, tile_color() | tile_number()}
   def parse_value("red"), do: {:ok, :red}
   def parse_value("blue"), do: {:ok, :blue}
   def parse_value("green"), do: {:ok, :green}

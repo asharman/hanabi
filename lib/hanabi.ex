@@ -43,8 +43,11 @@ defmodule Hanabi do
     end
   end
 
-  # @typep move() :: {:hint_given, %{to: String.t(), value: String.t()}} | :discard | :play_tile
-  # @spec make_move(String.t(), String.t(), move()) :: :ok | {:error, String.t()}
+  @type move() ::
+          {:hint_given, %{to: String.t(), value: Hanabi.Tile.tile_color() | Hanabi.Tile.tile_number()}}
+          | {:discard, non_neg_integer()}
+          | {:play_tile, non_neg_integer()}
+  @spec make_move(String.t(), String.t(), move()) :: :ok | {:error, String.t()}
   def make_move(lobby, player_name, move) do
     LobbyServer.make_move(lobby, player_name, move)
   end

@@ -11,8 +11,8 @@ defmodule Hanabi.LobbyServer do
     GenServer.call(via_tuple(name), :players)
   end
 
-  def make_move(name, player, hint) do
-    GenServer.call(via_tuple(name), {:make_move, player, hint})
+  def make_move(name, player, move) do
+    GenServer.call(via_tuple(name), {:make_move, player, move})
   end
 
   @spec add_player(String.t(), String.t()) :: :ok

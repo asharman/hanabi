@@ -22,6 +22,7 @@ defmodule HanabiWeb.GameLive do
       |> assign(:username, current_player)
       |> assign(:players, players)
       |> assign(:name, name)
+      |> assign(:active_tile, nil)
 
     {:ok, socket}
   end
@@ -33,18 +34,54 @@ defmodule HanabiWeb.GameLive do
   end
 
   def handle_event("hint_given", %{"player" => player, "hint" => hint}, socket) do
-    case Hanabi.make_move(
-           socket.assigns.name,
-           socket.assigns.username,
-           {:give_hint, %{to: player, value: hint}}
-         ) do
-      :ok ->
-        Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{socket.assigns.name}", :game_updated)
-        {:noreply, socket}
-
+    with {:ok, hint} <- Hanabi.Tile.parse_value(hint),
+         :ok <-
+           Hanabi.make_move(
+             socket.assigns.name,
+             socket.assigns.username,
+             {:give_hint, %{to: player, value: hint}}
+           ) do
+      Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{socket.assigns.name}", :game_updated)
+      {:noreply, assign(socket, :active_tile, nil)}
+    else
       {:error, message} ->
         {:noreply, put_flash(socket, :error, message)}
     end
+  end
+
+  def handle_event("play_tile", _, socket) do
+    with :ok <-
+           Hanabi.make_move(
+             socket.assigns.name,
+             socket.assigns.username,
+             {:play_tile, socket.assigns.active_tile}
+           ) do
+      Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{socket.assigns.name}", :game_updated)
+      {:noreply, assign(socket, :active_tile, nil)}
+    else
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  def handle_event("discard_tile", _, socket) do
+    with :ok <-
+           Hanabi.make_move(
+             socket.assigns.name,
+             socket.assigns.username,
+             {:discard_tile, socket.assigns.active_tile}
+           ) do
+      Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{socket.assigns.name}", :game_updated)
+      {:noreply, assign(socket, :active_tile, nil)}
+    else
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
+    end
+  end
+
+  def handle_event("select_tile", %{"index" => index}, socket) do
+    index = String.to_integer(index)
+    {:noreply, assign(socket, :active_tile, index)}
   end
 
   def handle_info(:game_updated, socket) do

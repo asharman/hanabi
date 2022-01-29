@@ -1,8 +1,10 @@
-<p>Your username: <%= @username %></p>
-<p>Current players: <%= @players %></p>
-
 <%= if @game_state do %>
-    <HanabiWeb.GameBoard.board client_username={@username} game={@game_state} />
+    <HanabiWeb.GameBoard.board
+        client_username={@username}
+        game={@game_state}
+        players={@players}
+        active_tile={@active_tile}
+    />
 <% else %>
     <%= if length(@players) > 1 do %>
         <button phx-click="start_game">Start Game</button>

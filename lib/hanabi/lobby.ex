@@ -1,7 +1,6 @@
 defmodule Hanabi.Lobby do
   defstruct [:name, :players, :game]
   alias Hanabi.Game
-  alias Hanabi.Tile
 
   @opaque t() :: %__MODULE__{
             name: String.t(),
@@ -50,14 +49,32 @@ defmodule Hanabi.Lobby do
   end
 
   def make_move(%__MODULE__{game: game} = lobby, player, {:give_hint, params}) do
-    with {:ok, value} <- Tile.parse_value(params.value) do
-      case Game.give_hint(game, player, params.to, value) do
-        {:ok, new_game} ->
-          {:ok, %__MODULE__{lobby | game: new_game}}
+    case Game.give_hint(game, player, params.to, params.value) do
+      {:ok, new_game} ->
+        {:ok, %__MODULE__{lobby | game: new_game}}
 
-        error_response ->
-          error_response
-      end
+      error ->
+        error
+    end
+  end
+
+  def make_move(%__MODULE__{game: game} = lobby, player, {:play_tile, index}) do
+    case Game.play_tile(game, player, index) do
+      {:ok, new_game} ->
+        {:ok, %__MODULE__{lobby | game: new_game}}
+
+      error ->
+        error
+    end
+  end
+
+  def make_move(%__MODULE__{game: game} = lobby, player, {:discard_tile, index}) do
+    case Game.discard_tile(game, player, index) do
+      {:ok, new_game} ->
+        {:ok, %__MODULE__{lobby | game: new_game}}
+
+      error ->
+        error
     end
   end
 end
