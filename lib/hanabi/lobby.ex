@@ -48,33 +48,22 @@ defmodule Hanabi.Lobby do
     Game.tally(game, player_name)
   end
 
-  def make_move(%__MODULE__{game: game} = lobby, player, {:give_hint, params}) do
-    case Game.give_hint(game, player, params.to, params.value) do
-      {:ok, new_game} ->
-        {:ok, %__MODULE__{lobby | game: new_game}}
-
-      error ->
-        error
+  @spec make_move(t(), String.t(), Hanabi.move()) :: {:ok, t()} | {:error, String.t()}
+  def make_move(%__MODULE__{game: game} = lobby, player, {:hint_given, params}) do
+    with {:ok, new_game} <- Game.give_hint(game, player, params.to, params.value) do
+      {:ok, %__MODULE__{lobby | game: new_game}}
     end
   end
 
   def make_move(%__MODULE__{game: game} = lobby, player, {:play_tile, index}) do
-    case Game.play_tile(game, player, index) do
-      {:ok, new_game} ->
-        {:ok, %__MODULE__{lobby | game: new_game}}
-
-      error ->
-        error
+    with {:ok, new_game} <- Game.play_tile(game, player, index) do
+      {:ok, %__MODULE__{lobby | game: new_game}}
     end
   end
 
   def make_move(%__MODULE__{game: game} = lobby, player, {:discard_tile, index}) do
-    case Game.discard_tile(game, player, index) do
-      {:ok, new_game} ->
-        {:ok, %__MODULE__{lobby | game: new_game}}
-
-      error ->
-        error
+    with {:ok, new_game} <- Game.discard_tile(game, player, index) do
+      {:ok, %__MODULE__{lobby | game: new_game}}
     end
   end
 end

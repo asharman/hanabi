@@ -39,7 +39,7 @@ defmodule HanabiWeb.GameLive do
            Hanabi.make_move(
              socket.assigns.name,
              socket.assigns.username,
-             {:give_hint, %{to: player, value: hint}}
+             {:hint_given, %{to: player, value: hint}}
            ) do
       Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{socket.assigns.name}", :game_updated)
       {:noreply, assign(socket, :active_tile, nil)}

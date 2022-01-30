@@ -12,7 +12,7 @@ defmodule HanabiWeb.GameBoard do
   @colors @hintable_colors ++ [:rainbow]
 
   def player(assigns) do
-    hand = get_player_hand(assigns.player, assigns.username, assigns.game)
+    hand = get_player_hand(assigns.player, assigns.game)
 
     ~H"""
        <article class="player" current_player={assigns.game.current_player == assigns.player}>
@@ -57,7 +57,7 @@ defmodule HanabiWeb.GameBoard do
                   class="tile-square"
                 >
                 </div>
-                <.tile_hints possible_values={tile} />
+                <.tile_hints possible_values={get_possible_values(tile)} />
               <% end %>
             </div>
         <% end %>
@@ -65,15 +65,15 @@ defmodule HanabiWeb.GameBoard do
         <%= for tile <- hand do %>
             <div class="hand-tile">
               <div
-                color={tile.color}
+                color={Hanabi.Tile.color(tile)}
                 class={
                   string_join(
                     ["tile-square",
-                    color_class(tile.color)
+                    color_class(Hanabi.Tile.color(tile))
                     ],
                     " "
                   )}>
-                  <p><%= tile.number %></p>
+                  <p><%= Hanabi.Tile.number(tile) %></p>
               </div>
               <.tile_hints possible_values={get_possible_values(tile)} />
             </div>
@@ -208,12 +208,6 @@ defmodule HanabiWeb.GameBoard do
   defp numbers(), do: 1..5
   defp color_class(color), do: "color-" <> Atom.to_string(color)
 
-  defp is_client_current_player?(%{
-         client_username: username,
-         game: %{current_player: current_player}
-       }),
-       do: username == current_player
-
   defp possible_value?(color, %{color: color_hints}) when color in @colors do
     MapSet.member?(color_hints, color)
   end
@@ -224,15 +218,12 @@ defmodule HanabiWeb.GameBoard do
 
   @spec get_possible_values(Hanabi.Tile.t()) :: Hanabi.Tile.tile_hints()
   defp get_possible_values(tile) do
-    Hanabi.Tile.tally(tile)
+    Hanabi.Tile.possible_values(tile)
   end
 
-  defp get_player_hand(player, client_username, game) do
-    if player == client_username do
-      game.hand
-    else
+  @spec get_player_hand(String.t(), Hanabi.Game.tally()) :: list(Hanabi.Tile.t())
+  defp get_player_hand(player, game) do
       Map.get(game.players, player)
-    end
   end
 
   defp view_board(board) do

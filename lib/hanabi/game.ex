@@ -37,7 +37,6 @@ defmodule Hanabi.Game do
   @typep discard_pile :: %{Tile.tile_color() => list(Tile.tile_number())}
   @type tally :: %{
           deck: non_neg_integer(),
-          hand: list(Tile.tile_hints()),
           players: %{String.t() => list(Tile.t())},
           board: board(),
           discard_pile: discard_pile(),
@@ -103,14 +102,25 @@ defmodule Hanabi.Game do
     with {:ok, player} <- fetch_player(game, username) do
       players =
         Enum.filter(game.players, &(Player.username(&1) != username))
-        |> Enum.into(%{}, fn p -> {Player.username(p), Player.hand(p)} end)
+        |> Enum.into(%{}, fn
+          p ->
+            player_username = Player.username(p)
+
+            if player_username == username do
+              {player_username,
+               Player.hand(p)
+               |> Enum.map(&Tile.conceal_tile/1)}
+            else
+              {player_username, Player.hand(p)}
+            end
+        end)
 
       %{
         game
         | players: players,
           deck: Deck.count(game.deck)
       }
-      |> Map.put(:hand, Enum.map(Player.hand(player), &Tile.tally/1))
+      |> Map.put(:hand, Enum.map(Player.hand(player), &Tile.conceal_tile/1))
     end
   end
 
@@ -280,8 +290,6 @@ defmodule Hanabi.Game do
     end
   end
 
-  @spec fetch_player(Hanabi.Game.t(), String.t()) ::
-          {:ok, Hanabi.Player.t()} | {:error, String.t()}
   defp fetch_player(%__MODULE__{players: players}, player_username) do
     case Enum.find(players, &(Player.username(&1) == player_username)) do
       nil ->
