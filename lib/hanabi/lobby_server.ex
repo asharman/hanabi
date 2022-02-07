@@ -1,6 +1,7 @@
 defmodule Hanabi.LobbyServer do
   use GenServer
   alias Hanabi.Lobby
+  alias Hanabi.GameServer
 
   def start_link(name) do
     GenServer.start_link(__MODULE__, name, name: via_tuple(name))
@@ -11,9 +12,9 @@ defmodule Hanabi.LobbyServer do
     GenServer.call(via_tuple(name), :players)
   end
 
-  def make_move(name, player, move) do
-    GenServer.call(via_tuple(name), {:make_move, player, move})
-  end
+  # def make_move(name, player, move) do
+  #   GenServer.call(via_tuple(name), {:make_move, player, move})
+  # end
 
   @spec add_player(String.t(), String.t()) :: :ok
   def add_player(name, new_player) do
@@ -27,12 +28,12 @@ defmodule Hanabi.LobbyServer do
 
   @spec new_game(String.t()) :: :ok
   def new_game(name) do
-    GenServer.cast(via_tuple(name), :new_game)
+    GenServer.call(via_tuple(name), :new_game)
   end
 
-  def get_tally(name, player_name) do
-    GenServer.call(via_tuple(name), {:tally, player_name})
-  end
+  # def get_tally(name, player_name) do
+  #   GenServer.call(via_tuple(name), {:tally, player_name})
+  # end
 
   @impl GenServer
   def init(name) do
@@ -44,6 +45,23 @@ defmodule Hanabi.LobbyServer do
   @impl GenServer
   def handle_call(:players, _from, lobby) do
     {:reply, MapSet.to_list(Lobby.players(lobby)), lobby}
+  end
+
+  @impl GenServer
+  def handle_call(:new_game, _from, lobby) do
+    id = Ecto.UUID.generate()
+
+    players =
+      Lobby.players(lobby)
+      |> MapSet.to_list()
+
+    case DynamicSupervisor.start_child(Hanabi.GameSupervisor, {GameServer, [id, players]}) do
+      {:ok, _} ->
+        {:reply, {:ok, id}, lobby}
+
+      error ->
+        {:reply, error, lobby}
+    end
   end
 
   @impl GenServer
@@ -70,11 +88,6 @@ defmodule Hanabi.LobbyServer do
   @impl GenServer
   def handle_cast({:remove_player, player}, lobby) do
     {:noreply, Lobby.remove_player(lobby, player)}
-  end
-
-  @impl GenServer
-  def handle_cast(:new_game, lobby) do
-    {:noreply, Lobby.start_game(lobby)}
   end
 
   defp via_tuple(name) do

@@ -12,18 +12,19 @@ defmodule HanabiWeb.GameBoard do
   @colors @hintable_colors ++ [:rainbow]
 
   def player(assigns) do
-    hand = get_player_hand(assigns.player, assigns.game)
+    {player, hand} = assigns.player
+    # hand = get_player_hand(assigns.player, assigns.game)
 
     ~H"""
-       <article class="player" current_player={assigns.game.current_player == assigns.player}>
+       <article class="player" current_player={assigns.game.current_player == player}>
         <div class="player-info">
-          <h2><%= assigns.player %></h2>
+          <h2><%= player %></h2>
         </div>
         <div class="hand">
-        <%= if assigns.username == assigns.game.current_player and assigns.username != assigns.player do %>
-          <.hint_buttons player={assigns.player} />
+        <%= if assigns.username == assigns.game.current_player and assigns.username != player do %>
+          <.hint_buttons player={player} />
         <% end %>
-        <%= if assigns.username == assigns.game.current_player and assigns.username == assigns.player do %>
+        <%= if assigns.username == assigns.game.current_player and assigns.username == player do %>
           <div>
             <button
               class="action-button"
@@ -39,10 +40,10 @@ defmodule HanabiWeb.GameBoard do
             </button>
           </div>
         <% end %>
-        <%= if assigns.player == assigns.username do %>
+        <%= if player == assigns.username do %>
         <%= for {tile, index} <- Enum.with_index(hand) do %>
             <div class="hand-tile">
-              <%= if assigns.username == assigns.game.current_player and assigns.username == assigns.player do %>
+              <%= if assigns.username == assigns.game.current_player and assigns.username == player do %>
                 <button
                   class="tile-square"
                   phx-click="select_tile"
@@ -51,7 +52,7 @@ defmodule HanabiWeb.GameBoard do
                 >
                   <span class="visually-hidden">Select Tile</span>
                 </button>
-                <.tile_hints possible_values={tile} />
+                <.tile_hints possible_values={get_possible_values(tile)} />
               <% else %>
                 <div
                   class="tile-square"
@@ -191,7 +192,7 @@ defmodule HanabiWeb.GameBoard do
     </div>
     </div>
     <div>
-    <%= for player <- assigns.players do %>
+    <%= for player <- assigns.game.players do %>
         <.player
           game={assigns.game}
           username={assigns.client_username}

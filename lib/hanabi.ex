@@ -1,5 +1,6 @@
 defmodule Hanabi do
   alias Hanabi.LobbyServer
+  alias Hanabi.GameServer
 
   @moduledoc """
   Hanabi keeps the contexts that define your domain
@@ -9,7 +10,7 @@ defmodule Hanabi do
   if it comes from the database, an external API or others.
   """
   def start_lobby(name) do
-    LobbyServer.start_link(name)
+    DynamicSupervisor.start_child(Hanabi.LobbySupervisor, {LobbyServer, name})
   end
 
   @spec lobby_players(String.t()) :: list(String.t())
@@ -27,28 +28,22 @@ defmodule Hanabi do
     LobbyServer.remove_player(name, player)
   end
 
-  @spec new_game(String.t()) :: :ok
+  # @spec new_game(String.t()) :: :ok
   def new_game(name) do
     LobbyServer.new_game(name)
   end
 
-  @spec get_tally(String.t(), String.t()) :: Hanabi.Game.tally() | {:error, String.t()} | nil
-  def get_tally(lobby_name, player_name) do
-    case LobbyServer.get_tally(lobby_name, player_name) do
-      :game_not_started ->
-        nil
-
-      tally ->
-        tally
-    end
+  @spec get_tally(Ecto.UUID.t(), String.t()) :: Hanabi.Game.tally() | {:error, String.t()} | nil
+  def get_tally(id, player_name) do
+    GameServer.get_tally(id, player_name)
   end
 
   @type move() ::
           {:hint_given, %{to: String.t(), value: Hanabi.Tile.tile_color() | Hanabi.Tile.tile_number()}}
           | {:discard_tile, non_neg_integer()}
           | {:play_tile, non_neg_integer()}
-  @spec make_move(String.t(), String.t(), move()) :: :ok | {:error, String.t()}
-  def make_move(lobby, player_name, move) do
-    LobbyServer.make_move(lobby, player_name, move)
+  @spec make_move(pid(), String.t(), move()) :: :ok | {:error, String.t()}
+  def make_move(pid, player_name, move) do
+    GameServer.make_move(pid, player_name, move)
   end
 end

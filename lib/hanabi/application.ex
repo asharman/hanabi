@@ -18,7 +18,9 @@ defmodule Hanabi.Application do
       # Start a worker by calling: Hanabi.Worker.start_link(arg)
       # {Hanabi.Worker, arg}
       {DynamicSupervisor, strategy: :one_for_one, name: Hanabi.LobbySupervisor},
-      {Registry, keys: :unique, name: Hanabi.LobbyRegistry}
+      {DynamicSupervisor, strategy: :one_for_one, name: Hanabi.GameSupervisor},
+      {Registry, keys: :unique, name: Hanabi.LobbyRegistry},
+      {Registry, keys: :unique, name: Hanabi.GameRegistry}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

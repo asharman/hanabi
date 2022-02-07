@@ -1,0 +1,16 @@
+<.form let={f} for={@changeset} as={:player} phx-submit="player_join">
+<%= label f, :username %>
+<%= text_input f, :username %>
+<%= error_tag f, :username %>
+<%= submit "Join Game" %>
+</.form>
+
+<%= if length(@players) >= 2 do %>
+    <button phx-click="start_game">Start Game</button>
+<% end %>
+
+<ul>
+    <%= for player <- @players do %>
+    <li><%= player %></li>
+    <% end %>
+</ul>

@@ -101,8 +101,7 @@ defmodule Hanabi.Game do
   def tally(game, username) do
     with {:ok, player} <- fetch_player(game, username) do
       players =
-        Enum.filter(game.players, &(Player.username(&1) != username))
-        |> Enum.into(%{}, fn
+        Enum.into(game.players, %{}, fn
           p ->
             player_username = Player.username(p)
 

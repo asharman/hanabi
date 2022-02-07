@@ -5,7 +5,7 @@ defmodule HanabiWeb.LobbyController do
 
   def show(conn, %{"name" => name}) do
     changeset = change({%{}, @form_types})
-    render(conn, "join_game.html", changeset: changeset, name: name)
+    render(conn, HanabiWeb.LobbyLive, session: %{changeset: changeset, name: name})
   end
 
   def join(conn, %{"name" => name, "player" => player_params}) do
@@ -14,7 +14,7 @@ defmodule HanabiWeb.LobbyController do
         redirect(conn, to: Routes.game_path(conn, :join, name, player: new_player))
 
       {:error, %Ecto.Changeset{} = changeset} ->
-        render(conn, "join_game.html", changeset: changeset, name: name)
+        live_render(conn, HanabiWeb.LobbyLive, session: %{changeset: changeset, name: name})
     end
   end
 

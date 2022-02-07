@@ -5,10 +5,10 @@ defmodule HanabiWeb.GameController do
     render(conn, "index.html")
   end
 
-  def join(conn, %{"name" => name, "player" => player}) do
+  def join(conn, %{"id" => id, "player" => player}) do
     conn
     |> put_session(:player, player)
-    |> live_render(HanabiWeb.GameLive, session: %{"name" => name})
+    |> live_render(HanabiWeb.GameLive, session: %{"id" => id})
   end
 
   def join(conn, %{"name" => name}) do
