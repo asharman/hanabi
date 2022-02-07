@@ -10,7 +10,15 @@ defmodule Hanabi.MixProject do
       compilers: [:gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      dialyzer: [
+        flags: [
+          :race_conditions,
+          :underspecs,
+          :unknown,
+          :error_handling
+        ]
+      ]
     ]
   end
 
