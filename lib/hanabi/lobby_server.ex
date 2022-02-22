@@ -1,5 +1,5 @@
 defmodule Hanabi.LobbyServer do
-  use GenServer
+  use GenServer, restart: :transient
   alias Hanabi.Lobby
   alias Hanabi.GameServer
 
@@ -10,6 +10,10 @@ defmodule Hanabi.LobbyServer do
   @spec players(String.t()) :: list(String.t())
   def players(name) do
     GenServer.call(via_tuple(name), :players)
+  end
+
+  def stop(name) do
+    GenServer.call(via_tuple(name), :stop)
   end
 
   # def make_move(name, player, move) do
@@ -40,6 +44,11 @@ defmodule Hanabi.LobbyServer do
     lobby = Lobby.new_room(name)
 
     {:ok, lobby}
+  end
+
+  @impl GenServer
+  def handle_call(:stop, _from, lobby) do
+    {:stop, :normal, :ok, lobby}
   end
 
   @impl GenServer

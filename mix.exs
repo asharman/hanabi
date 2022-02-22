@@ -55,6 +55,7 @@ defmodule Hanabi.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:ecto, "~> 3.7"},
+      {:uuid, "~> 1.1"},
       {:phoenix_ecto, "~> 4.4"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
     ]

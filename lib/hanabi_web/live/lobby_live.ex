@@ -62,6 +62,8 @@ defmodule HanabiWeb.LobbyLive do
         {:game_started, id}
       )
 
+      Hanabi.stop_lobby(socket.assigns.name)
+
       {:noreply, socket}
     else
       {:error, message} ->
@@ -69,10 +71,11 @@ defmodule HanabiWeb.LobbyLive do
     end
   end
 
-  def handle_info({:game_started, pid}, socket) do
+  def handle_info({:game_started, id}, socket) do
     {:noreply,
      redirect(socket,
-       to: Routes.game_path(HanabiWeb.Endpoint, :join, pid, player: socket.assigns.current_player)
+       to:
+         Routes.game_path(HanabiWeb.Endpoint, :join, id: id, player: socket.assigns.current_player)
      )}
   end
 

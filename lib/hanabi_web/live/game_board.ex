@@ -149,6 +149,11 @@ defmodule HanabiWeb.GameBoard do
   def board(assigns) do
     ~H"""
     <div class="game-info">
+      <div class="game-messages">
+        <%= for message <- Enum.reverse(assigns.messages) do %>
+          <p><%= message %></p>
+        <% end %>
+      </div>
       <div class="deck-and-hints">
         <p class="deck"><span>Deck</span><span><%= assigns.game.deck %></span></p>
         <div >

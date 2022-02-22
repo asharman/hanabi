@@ -7,15 +7,12 @@ defmodule HanabiWeb.GameLive do
   def mount(_params, %{"id" => id, "player" => current_player}, socket) do
     if connected?(socket) do
       Phoenix.PubSub.subscribe(Hanabi.PubSub, "game:#{id}")
-      # Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{name}", :players_updated)
-    #   LiveMonitor.monitor(self(), __MODULE__, %{player: current_player, name: name})
+      LiveMonitor.monitor(self(), __MODULE__, %{player: current_player, id: id})
+      Hanabi.add_player_to_game(id, current_player)
     end
 
     tally = Hanabi.get_tally(id, current_player)
-
-    # Hanabi.start_lobby(name)
-    # Hanabi.add_player_to_lobby(name, current_player)
-    # players = Hanabi.lobby_players(name)
+    messages = Hanabi.get_messages(id)
 
     socket =
       socket
@@ -23,19 +20,10 @@ defmodule HanabiWeb.GameLive do
       |> assign(:game_state, tally)
       |> assign(:id, id)
       |> assign(:active_tile, nil)
+      |> assign(:messages, messages)
 
     {:ok, socket}
   end
-
-  # def handle_event("start_game", _, socket) do
-  #   with {:ok, pid} <- Hanabi.new_game(socket.assigns.id) do
-  #     Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{socket.assigns.id}", :game_updated)
-  #     {:noreply, socket}
-  #   else
-  #     {:error, message} ->
-  #       {:noreply, put_flash(socket, :error, message)}
-  #   end
-  # end
 
   def handle_event("hint_given", %{"player" => player, "hint" => hint}, socket) do
     with {:ok, hint} <- Hanabi.Tile.parse_value(hint),
@@ -89,8 +77,29 @@ defmodule HanabiWeb.GameLive do
   end
 
   def handle_info(:game_updated, socket) do
-    tally = Hanabi.get_tally(socket.assigns.id, socket.assigns.username)
-    {:noreply, assign(socket, :game_state, tally)}
+    case Hanabi.get_tally(socket.assigns.id, socket.assigns.username) do
+      {:error, message} ->
+        {:noreply, put_flash(socket, :error, message)}
+
+      tally ->
+        messages = Hanabi.get_messages(socket.assigns.id)
+
+        if game_over?(tally) do
+          {:noreply,
+           socket
+           |> assign(:game_state, tally)
+           |> assign(:messages, messages)
+           |> assign(:messages, [
+             "Game Over! Your score is #{socket.assigns.game_state.score}"
+             | socket.assigns.messages
+           ])}
+        else
+          {:noreply,
+           socket
+           |> assign(:game_state, tally)
+           |> assign(:messages, messages)}
+        end
+    end
   end
 
   def handle_info(:players_updated, socket) do
@@ -98,8 +107,10 @@ defmodule HanabiWeb.GameLive do
     {:noreply, assign(socket, :players, players)}
   end
 
-  def unmount(_reason, %{player: player, name: name}) do
-    Hanabi.remove_player_from_lobby(name, player)
-    Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{name}", :players_updated)
+  def unmount(_reason, %{player: player, id: id}) do
+    Hanabi.remove_player_from_game(id, player)
   end
+
+  defp game_over?(%{state: :playing}), do: false
+  defp game_over?(%{state: _other}), do: true
 end

@@ -10,7 +10,7 @@ defmodule HanabiGameTest do
     expected_hand =
       Enum.map(1..5, fn _ ->
         Tile.init(:red, 1)
-        |> Tile.tally()
+        |> Tile.conceal_tile()
       end)
 
     expected_board = empty_board()
@@ -25,9 +25,9 @@ defmodule HanabiGameTest do
              message: "Welcome to Hanabi!",
              current_player: "player_1",
              players: %{
+               "player_1" => player_hand,
                "player_2" => player_2_hand
-             },
-             hand: player_hand
+             }
            } = Game.tally(game, "player_1")
 
     assert length(player_2_hand) == 5
@@ -156,7 +156,8 @@ defmodule HanabiGameTest do
         Tile.init(:rainbow, 3),
         Tile.init(:yellow, 1),
         Tile.init(:red, 1),
-        Tile.init(:blue, 2)
+        Tile.init(:blue, 2),
+        Tile.init(:green, 3)
       ]
 
       game = Game.new_game(["player_1", "player_2"], initial_deck)
@@ -182,26 +183,29 @@ defmodule HanabiGameTest do
         current_player: current_player
       } = Game.tally(new_game, "player_1")
 
-      %{hand: player_2_hints} = Game.tally(new_game, "player_2")
+      %{players: %{"player_2" => player_2_tiles}} = Game.tally(new_game, "player_2")
+
+      player_2_hints = Enum.map(player_2_tiles, &Tile.hints/1)
 
       assert new_hint_count == initial_hint_count - 3
       assert current_player == "player_2"
 
-      assert Enum.all?(player_2_hand, fn %{hints: %{color: color_hints}} ->
+      assert Enum.all?(player_2_hand, fn tile ->
+               %{color: color_hints} = Tile.hints(tile)
                MapSet.member?(color_hints, :red) and MapSet.member?(color_hints, :blue)
              end)
 
       assert player_2_hints == [
-               %{unhinted_tile() | color: MapSet.new([:blue])},
-               %{unhinted_tile() | color: MapSet.new([:red])},
+               %{unhinted_tile_hints() | color: MapSet.new([:blue])},
+               %{unhinted_tile_hints() | color: MapSet.new([:red])},
                %{
-                 unhinted_tile()
-                 | color: MapSet.delete(unhinted_tile().color, :red) |> MapSet.delete(:blue)
+                 unhinted_tile_hints()
+                 | color: MapSet.delete(unhinted_tile_hints().color, :red) |> MapSet.delete(:blue)
                },
-               %{unhinted_tile() | color: MapSet.new([:rainbow])},
+               %{unhinted_tile_hints() | color: MapSet.new([:rainbow])},
                %{
-                 unhinted_tile()
-                 | color: MapSet.delete(unhinted_tile().color, :red) |> MapSet.delete(:blue)
+                 unhinted_tile_hints()
+                 | color: MapSet.delete(unhinted_tile_hints().color, :red) |> MapSet.delete(:blue)
                }
              ]
 
@@ -240,7 +244,16 @@ defmodule HanabiGameTest do
     setup do
       initial_deck = [
         Tile.init(:red, 1),
-        Tile.init(:blue, 2)
+        Tile.init(:white, 2),
+        Tile.init(:green, 2),
+        Tile.init(:yellow, 2),
+        Tile.init(:blue, 2),
+        Tile.init(:blue, 2),
+        Tile.init(:rainbow, 2),
+        Tile.init(:green, 4),
+        Tile.init(:yellow, 3),
+        Tile.init(:green, 5),
+        Tile.init(:white, 2)
       ]
 
       game = Game.new_game(["player_1", "player_2"], initial_deck)
@@ -342,6 +355,7 @@ defmodule HanabiGameTest do
 
       assert tally.state == :done
       assert Game.score(new_game) == 30
+      assert {:error, "The game is over!"} == Game.play_tile(new_game, "player_1", 0)
     end
 
     test "running out of turns when the deck is empty" do
@@ -376,6 +390,7 @@ defmodule HanabiGameTest do
 
       assert tally.state == :done
       assert Game.score(new_game) == 1
+      assert {:error, "The game is over!"} == Game.give_hint(new_game, "player_1", "player_2", 1)
     end
 
     test "lose the game after 3 strikes" do
@@ -411,6 +426,8 @@ defmodule HanabiGameTest do
 
       assert tally.state == :lose
       assert Game.score(new_game) == 0
+
+      assert {:error, "The game is over!"} == Game.play_tile(new_game, "player_1", 0)
     end
   end
 
@@ -436,7 +453,7 @@ defmodule HanabiGameTest do
     }
   end
 
-  defp unhinted_tile() do
+  defp unhinted_tile_hints() do
     %{
       color: MapSet.new([:red, :blue, :green, :yellow, :white, :rainbow]),
       number: MapSet.new([1, 2, 3, 4, 5])
