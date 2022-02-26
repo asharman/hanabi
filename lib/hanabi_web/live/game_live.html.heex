@@ -1,8 +1,12 @@
-<.form let={f} for={@changeset} as={:player} phx-submit="add_player">
-<%= label f, :username %>
-<%= text_input f, :username %>
-<%= error_tag f, :username %>
-<%= submit "Join Game" %>
-</.form>
-
-<p>Current players: <%= @players %></p>
+<%= if @game_state do %>
+    <HanabiWeb.GameBoard.board
+        client_username={@username}
+        game={@game_state}
+        active_tile={@active_tile}
+        messages={@messages}
+    />
+<% else %>
+    <%= if length(@players) > 1 do %>
+        <button phx-click="start_game">Start Game</button>
+    <% end %>
+<% end %>

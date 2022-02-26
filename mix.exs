@@ -10,7 +10,15 @@ defmodule Hanabi.MixProject do
       compilers: [:gettext] ++ Mix.compilers(),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
-      deps: deps()
+      deps: deps(),
+      dialyzer: [
+        flags: [
+          :race_conditions,
+          :underspecs,
+          :unknown,
+          :error_handling
+        ]
+      ]
     ]
   end
 
@@ -47,7 +55,9 @@ defmodule Hanabi.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:ecto, "~> 3.7"},
-      {:phoenix_ecto, "~> 4.4"}
+      {:uuid, "~> 1.1"},
+      {:phoenix_ecto, "~> 4.4"},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
     ]
   end
 

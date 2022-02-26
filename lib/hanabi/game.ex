@@ -20,6 +20,8 @@ defmodule Hanabi.Game do
     :turns
   ])
 
+  defguard game_over(game) when game.state != :playing
+
   @opaque t() :: %__MODULE__{
             deck: Deck.t(),
             turns: non_neg_integer(),
@@ -37,15 +39,15 @@ defmodule Hanabi.Game do
   @typep discard_pile :: %{Tile.tile_color() => list(Tile.tile_number())}
   @type tally :: %{
           deck: non_neg_integer(),
-          state: :playing | :done | :lose,
-          hand: list(Tile.tile_hints()),
           players: %{String.t() => list(Tile.t())},
           board: board(),
           discard_pile: discard_pile(),
           strikes: 0 | 1 | 2,
           hint_count: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8,
           current_player: String.t(),
-          message: String.t()
+          state: :playing | :win | :lose,
+          message: String.t(),
+          score: non_neg_integer()
         }
 
   @spec new_game(list(String.t())) :: Hanabi.Game.t()
@@ -99,21 +101,49 @@ defmodule Hanabi.Game do
     }
   end
 
+  @spec game_over?(Hanabi.Game.t()) :: boolean()
+  def game_over?(%{state: :playing}), do: false
+  def game_over?(%{state: _other}), do: true
+
+  @spec player_in_game?(Hanabi.Game.t(), String.t()) :: boolean()
+  def player_in_game?(%__MODULE__{players: players}, player) do
+    Enum.any?(players, fn p -> Player.username(p) == player end)
+  end
+
   @spec tally(Hanabi.Game.t(), String.t()) :: tally() | {:error, String.t()}
   def tally(game, username) do
-    with {:ok, player} <- fetch_player(game, username) do
+    with {:ok, _player} <- fetch_player(game, username) do
       players =
-        Enum.filter(game.players, &(Player.username(&1) != username))
-        |> Enum.into(%{}, fn p -> {Player.username(p), Player.hand(p)} end)
+        Enum.into(game.players, %{}, fn
+          p ->
+            player_username = Player.username(p)
+
+            if player_username == username do
+              {player_username,
+               Player.hand(p)
+               |> Enum.map(&Tile.conceal_tile/1)}
+            else
+              {player_username, Player.hand(p)}
+            end
+        end)
 
       %{
-        game
-        | players: players,
-          deck: Deck.count(game.deck)
+        players: players,
+        deck: Deck.count(game.deck),
+        board: game.board,
+        discard_pile: game.discard_pile,
+        strikes: game.strikes,
+        hint_count: game.hint_count,
+        current_player: game.current_player,
+        state: game.state,
+        message: game.message,
+        score: score(game)
       }
-      |> Map.put(:hand, Enum.map(Player.hand(player), &Tile.tally/1))
     end
   end
+
+  @spec message(Hanabi.Game.t()) :: String.t()
+  def message(%__MODULE__{message: msg}), do: msg
 
   @spec score(Hanabi.Game.t()) :: non_neg_integer()
   def score(%__MODULE__{state: :lose}), do: 0
@@ -124,6 +154,10 @@ defmodule Hanabi.Game do
 
   @spec play_tile(Hanabi.Game.t(), String.t(), non_neg_integer()) ::
           {:ok, Hanabi.Game.t()} | {:error, String.t()}
+  def play_tile(game, _player_username, _position) when game_over(game) do
+    {:error, "The game is over!"}
+  end
+
   def play_tile(game, player_username, _position) when player_username != game.current_player do
     {:error, "It is currently #{game.current_player}'s turn"}
   end
@@ -184,17 +218,17 @@ defmodule Hanabi.Game do
           String.t(),
           Hanabi.Tile.tile_color() | Hanabi.Tile.tile_number()
         ) :: {:ok, Hanabi.Game.t()} | {:error, String.t()}
+  def give_hint(game, _hinting_player, _hinted_player, _value) when game_over(game) do
+    {:error, "The game is over!"}
+  end
+
   def give_hint(game, hinting_player, _hinted_player, _value)
       when hinting_player != game.current_player do
     {:error, "It is currently #{game.current_player}'s turn"}
   end
 
-  def give_hint(%__MODULE__{hint_count: 0} = game, _hinting_player, _hinted_player, _value) do
-    {:ok,
-     %__MODULE__{
-       game
-       | message: "There are no hints left, choose another action"
-     }}
+  def give_hint(%__MODULE__{hint_count: 0}, _hinting_player, _hinted_player, _value) do
+    {:error, "There are no hints left, choose another action"}
   end
 
   def give_hint(game, hinting_player, hinted_player, value) do
@@ -220,13 +254,17 @@ defmodule Hanabi.Game do
 
   @spec discard_tile(Hanabi.Game.t(), String.t(), non_neg_integer()) ::
           {:ok, Hanabi.Game.t()} | {:error, String.t()}
+  def discard_tile(game, _player_username, _position) when game_over(game) do
+    {:error, "The game is over!"}
+  end
+
   def discard_tile(game, player_username, _position)
       when player_username != game.current_player do
     {:error, "It is currently #{game.current_player}'s turn"}
   end
 
-  def discard_tile(%__MODULE__{hint_count: 8} = game, _player_username, _position) do
-    {:ok, %__MODULE__{game | message: "Cannot discard a tile while there are 8 hints"}}
+  def discard_tile(%__MODULE__{hint_count: 8}, _player_username, _position) do
+    {:error, "Cannot discard a tile while there are 8 hints"}
   end
 
   def discard_tile(game, player_username, position) do
@@ -285,8 +323,6 @@ defmodule Hanabi.Game do
     end
   end
 
-  @spec fetch_player(Hanabi.Game.t(), String.t()) ::
-          {:ok, Hanabi.Player.t()} | {:error, String.t()}
   defp fetch_player(%__MODULE__{players: players}, player_username) do
     case Enum.find(players, &(Player.username(&1) == player_username)) do
       nil ->

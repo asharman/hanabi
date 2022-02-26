@@ -14,10 +14,13 @@ defmodule Hanabi.Application do
       {Phoenix.PubSub, name: Hanabi.PubSub},
       # Start the Endpoint (http/https)
       HanabiWeb.Endpoint,
+      HanabiWeb.LiveMonitor,
       # Start a worker by calling: Hanabi.Worker.start_link(arg)
       # {Hanabi.Worker, arg}
       {DynamicSupervisor, strategy: :one_for_one, name: Hanabi.LobbySupervisor},
-      {Registry, keys: :unique, name: Hanabi.LobbyRegistry}
+      {DynamicSupervisor, strategy: :one_for_one, name: Hanabi.GameSupervisor},
+      {Registry, keys: :unique, name: Hanabi.LobbyRegistry},
+      {Registry, keys: :unique, name: Hanabi.GameRegistry}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

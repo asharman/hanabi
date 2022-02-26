@@ -23,6 +23,7 @@ defmodule HanabiWeb do
 
       import Plug.Conn
       import HanabiWeb.Gettext
+      import Phoenix.LiveView.Controller
       alias HanabiWeb.Router.Helpers, as: Routes
     end
   end
