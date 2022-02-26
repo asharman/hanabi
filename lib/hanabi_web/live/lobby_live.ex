@@ -44,13 +44,18 @@ defmodule HanabiWeb.LobbyLive do
         Phoenix.PubSub.broadcast(
           Hanabi.PubSub,
           "lobby:#{socket.assigns.name}",
-          :players_updated
+          {:player_join, new_player}
         )
 
         {:noreply,
          socket
-         |> put_flash(:info, "#{new_player} joined the #{socket.assigns.name} lobby")
-         |> assign(:current_player, new_player)}
+         |> assign(:current_player, new_player)
+         |> assign(:changeset, change({%{}, @form_types}))}
+
+      {:error, changeset} ->
+        {:noreply,
+         socket
+         |> assign(:changeset, changeset)}
     end
   end
 
@@ -79,14 +84,27 @@ defmodule HanabiWeb.LobbyLive do
      )}
   end
 
-  def handle_info(:players_updated, socket) do
+  def handle_info({:player_join, player}, socket) do
     players = Hanabi.lobby_players(socket.assigns.name)
-    {:noreply, assign(socket, :players, players)}
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "#{player} joined the #{socket.assigns.name} lobby")
+     |> assign(:players, players)}
+  end
+
+  def handle_info({:player_left, player}, socket) do
+    players = Hanabi.lobby_players(socket.assigns.name)
+
+    {:noreply,
+     socket
+     |> put_flash(:info, "#{player} left the #{socket.assigns.name} lobby")
+     |> assign(:players, players)}
   end
 
   def unmount(_reason, %{player: player, name: name}) do
     Hanabi.remove_player_from_lobby(name, player)
-    Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{name}", :players_updated)
+    Phoenix.PubSub.broadcast(Hanabi.PubSub, "lobby:#{name}", {:player_left, player})
   end
 
   defp cast_params(form_data, type_map) do
