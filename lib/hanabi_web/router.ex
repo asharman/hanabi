@@ -18,6 +18,7 @@ defmodule HanabiWeb.Router do
     pipe_through :browser
 
     get "/", LobbyController, :index
+    get "/lobby", LobbyController, :index
     live "/lobby/:name", LobbyLive, :index
     get "/game", GameController, :join
   end
